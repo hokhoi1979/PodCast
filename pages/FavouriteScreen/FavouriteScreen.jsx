@@ -3,48 +3,46 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   FlatList,
   TouchableOpacity,
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { mockData } from "../../data";
+import { initialData } from "../../data";
+import Toast from "react-native-toast-message";
 
-export default function SearchScreen() {
-  const [search, setSearch] = useState("");
+export default function FavouriteScreen() {
+  const [favourites, setFavourites] = useState(initialData);
 
-  const filtered = mockData.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const removeFavourite = (id) => {
+    setFavourites((prev) => prev.filter((item) => item.id !== id));
+    Toast.show({
+      type: "success",
+      text1: "Thành công",
+      text2: "Bạn đã xóa thành công",
+      position: "bottom",
+      visibilityTime: 2000,
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.searchBox}>
+      <View style={styles.header}>
         <Ionicons
-          name="search"
+          name="heart-outline"
           size={20}
-          color="#888"
-          style={{ marginRight: 8 }}
+          color="red"
+          style={{ marginRight: 6 }}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Tìm kiếm..."
-          value={search}
-          onChangeText={setSearch}
-        />
+        <Text style={styles.headerText}>Yêu thích</Text>
       </View>
 
-      <Text style={styles.resultText}>
-        Kết quả tìm kiếm ({filtered.length})
-      </Text>
-
       <FlatList
-        data={filtered}
+        data={favourites}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card}>
+          <View style={styles.card}>
             <Image
               source={{ uri: "https://via.placeholder.com/50" }}
               style={styles.image}
@@ -55,9 +53,24 @@ export default function SearchScreen() {
                 {item.author} · {item.duration}
               </Text>
             </View>
-            <Ionicons name="play" size={20} color="#333" />
-          </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => removeFavourite(item.id)}>
+              <Ionicons name="heart" size={22} color="#f45454" />
+            </TouchableOpacity>
+
+            <Ionicons
+              name="play"
+              size={20}
+              color="#333"
+              style={{ marginLeft: 12 }}
+            />
+          </View>
         )}
+        ListEmptyComponent={
+          <Text style={{ textAlign: "center", marginTop: 20, color: "#666" }}>
+            Chưa có mục yêu thích nào
+          </Text>
+        }
       />
     </SafeAreaView>
   );
@@ -69,24 +82,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#fefcf7",
     padding: 16,
   },
-  searchBox: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 16,
-    height: 45,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-  },
-  resultText: {
-    fontSize: 16,
-    fontWeight: "600",
     marginBottom: 12,
+  },
+  headerText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
   },
   card: {
     flexDirection: "row",
