@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { Download, Heart, Play } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -8,13 +8,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSelector } from "react-redux";
 import { categories, episodes } from "../../data/index.js";
 import Header from "../../shared/header/Header.jsx";
 
 export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isPlaying, setIsPlaying] = useState(false);
+  const { user = [] } = useSelector((state) => state.auth);
 
+  useEffect(() => {
+    console.log("uSeR", user);
+  }, [user]);
   return (
     <>
       <Header />
