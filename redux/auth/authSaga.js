@@ -4,20 +4,12 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import Toast from "react-native-toast-message";
 import { all, call, put, takeLatest } from "redux-saga/effects";
-import {
-  FETCH_API_LOGIN,
-  FETCH_API_REGISTER,
-  fetchFail,
-  fetchSuccess,
-  registerSuccess,
-} from "./authSlice";
+import { FETCH_API_LOGIN, fetchFail, fetchSuccess } from "./authSlice";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.3:8080";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-export function* fetchLogin(action) {
+export function* LoginSaga(action) {
   try {
-
-
     const response = yield call(
       axios.post,
       `${API_URL}/api/auth/login`,
@@ -29,7 +21,6 @@ export function* fetchLogin(action) {
         },
       }
     );
-
 
     const accessToken = response?.data?.token;
 
@@ -45,15 +36,10 @@ export function* fetchLogin(action) {
           token: accessToken,
         })
       );
-
       Toast.show({
         type: "success",
         text1: "Login successful!",
       });
-
-      if (action.onSuccess) {
-        yield call(action.onSuccess, { user: decodedUser, token: accessToken });
-      }
     } else {
       throw new Error("Email or password is not correct! Try again");
     }
@@ -77,40 +63,40 @@ export function* fetchLogin(action) {
   }
 }
 
-export function* fetchRegister(action) {
-  try {
-    console.log("API_URL:", API_URL);
-    console.log("Register payload:", action.payload);
+// export function* watchRegisters(action) {
+//   try {
+//     console.log("API_URL:", API_URL);
+//     console.log("Register payload:", action.payload);
 
-    const response = yield call(
-      axios.post,
-      `${API_URL}/api/auth/register`,
-      action.payload
-    );
+//     const response = yield call(
+//       axios.post,
+//       `${API_URL}/api/auth/register`,
+//       action.payload
+//     );
 
-    console.log("Register response:", response.data);
+//     console.log("Register response:", response.data);
 
-    yield put(registerSuccess());
-    Toast.show({ type: "success", text1: "Register successful!" });
+//     yield put(registerSuccess());
+//     Toast.show({ type: "success", text1: "Register successful!" });
 
-    if (action.onSuccess) {
-      yield call(action.onSuccess);
-    }
-  } catch (error) {
-    console.error("Register error:", error);
-    let errorMessage = "Register failed!";
-    if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    yield put(fetchFail(errorMessage));
-  }
-}
+//     if (action.onSuccess) {
+//       yield call(action.onSuccess);
+//     }
+//   } catch (error) {
+//     console.error("Register error:", error);
+//     let errorMessage = "Register failed!";
+//     if (error.response?.data?.message) {
+//       errorMessage = error.response.data.message;
+//     } else if (error.message) {
+//       errorMessage = error.message;
+//     }
+//     yield put(fetchFail(errorMessage));
+//   }
+// }
 
-export default function* authSaga() {
+export default function* watchLogin() {
   yield all([
-    takeLatest(FETCH_API_LOGIN, fetchLogin),
-    takeLatest(FETCH_API_REGISTER, fetchRegister),
+    takeLatest(FETCH_API_LOGIN, LoginSaga),
+    // takeLatest(FETCH_API_REGISTER, fetchRegister),
   ]);
 }

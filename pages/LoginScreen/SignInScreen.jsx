@@ -1,7 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
+import { useNavigation } from "expo-router";
 import LottieView from "lottie-react-native";
 import { LockKeyhole, Mail } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -17,7 +18,8 @@ export default function SignInScreen({ navigation }) {
   const { loading, error } = useSelector((state) => state.auth); // Add state selector
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const { user = [] } = useSelector((state) => state.auth);
+  const navigate = useNavigation();
   const handleSignIn = () => {
     if (!email || !password) {
       alert("Please fill in all fields");
@@ -38,6 +40,12 @@ export default function SignInScreen({ navigation }) {
       },
     });
   };
+
+  useEffect(() => {
+    if (user) {
+      navigation.replace("MainApp");
+    }
+  }, [user]);
 
   return (
     <View style={styles.container}>

@@ -3,8 +3,8 @@ export const FETCH_API_LOGIN = "FETCH_API_LOGIN";
 export const FETCH_API_SUCCESS = "FETCH_API_SUCCESS";
 export const FETCH_API_FAIL = "FETCH_API_FAIL";
 export const LOG_OUT = "LOG_OUT";
-export const FETCH_API_REGISTER = "FETCH_API_REGISTER";
-export const FETCH_API_REGISTER_SUCCESS = "FETCH_API_REGISTER_SUCCESS";
+// export const FETCH_API_REGISTER = "FETCH_API_REGISTER";
+// export const FETCH_API_REGISTER_SUCCESS = "FETCH_API_REGISTER_SUCCESS";
 
 // Action Creators
 export const fetchLogin = (data) => ({
@@ -12,10 +12,10 @@ export const fetchLogin = (data) => ({
   payload: data,
 });
 
-export const fetchRegister = (data) => ({
-  type: FETCH_API_REGISTER,
-  payload: data,
-});
+// export const fetchRegister = (data) => ({
+//   type: FETCH_API_REGISTER,
+//   payload: data,
+// });
 
 export const fetchSuccess = (data) => ({
   type: FETCH_API_SUCCESS,
@@ -27,9 +27,9 @@ export const fetchFail = (error) => ({
   payload: error,
 });
 
-export const registerSuccess = () => ({
-  type: FETCH_API_REGISTER_SUCCESS,
-});
+// export const registerSuccess = () => ({
+//   type: FETCH_API_REGISTER_SUCCESS,
+// });
 
 export const logout = () => ({
   type: LOG_OUT,
@@ -48,8 +48,8 @@ const accountReducers = (state = initialState, action) => {
   switch (action.type) {
     case FETCH_API_LOGIN:
       return { ...state, loading: true, error: null };
-    case FETCH_API_REGISTER:
-      return { ...state, loading: true, error: null };
+    // case FETCH_API_REGISTER:
+    //   return { ...state, loading: true, error: null };
     case FETCH_API_SUCCESS:
       return {
         ...state,
@@ -57,8 +57,8 @@ const accountReducers = (state = initialState, action) => {
         user: action.payload.user,
         token: action.payload.token,
       };
-    case FETCH_API_REGISTER_SUCCESS:
-      return { ...state, loading: false };
+    // case FETCH_API_REGISTER_SUCCESS:
+    //   return { ...state, loading: false };
     case FETCH_API_FAIL:
       return { ...state, loading: false, error: action.payload };
     case LOG_OUT:
