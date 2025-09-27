@@ -1,5 +1,4 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useNavigation } from "expo-router";
 import LottieView from "lottie-react-native";
 import { LockKeyhole, Mail } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
@@ -10,42 +9,46 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
-import { FETCH_API_LOGIN } from "../../redux/auth/authSlice";
+import { FETCH_API_LOGIN } from "../../redux/auth/loginSlice";
 
 export default function SignInScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.auth); // Add state selector
+  const { loading, error, user } = useSelector((state) => state.auth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { user = [] } = useSelector((state) => state.auth);
-  const navigate = useNavigation();
+
   const handleSignIn = () => {
     if (!email || !password) {
-      alert("Please fill in all fields");
+      Toast.show({
+        type: "error",
+        text1: "Please fill in all fields",
+      });
       return;
     }
 
     dispatch({
       type: FETCH_API_LOGIN,
       payload: { username: email, passwordHash: password },
-      onSuccess: ({ user }) => {
-        console.log("Login success, user:", user);
-        const role = user?.role || user?.authorities?.[0] || "USER";
-        if (role?.toString().toUpperCase().includes("ADMIN")) {
-          navigation.replace("Admin");
-        } else {
-          navigation.replace("MainApp");
-        }
-      },
     });
   };
 
+  // Navigation logic when user changes
   useEffect(() => {
     if (user) {
-      navigation.replace("MainApp");
+      const role =
+        user?.role || user?.authorities?.[0] || user?.user?.role || "user";
+
+      const isAdmin = String(role).toLowerCase().includes("admin");
+
+      if (isAdmin) {
+        navigation.replace("Admin");
+      } else {
+        navigation.replace("MainApp");
+      }
     }
-  }, [user]);
+  }, [user, navigation]);
 
   return (
     <View style={styles.container}>
@@ -59,8 +62,6 @@ export default function SignInScreen({ navigation }) {
       </View>
 
       <View style={styles.form}>
-        {error && <Text style={styles.errorText}>{error}</Text>}
-
         <View style={styles.inputContainer}>
           <Text style={styles.inputIcon}>
             <Mail />
@@ -131,12 +132,6 @@ const styles = StyleSheet.create({
   illustrationContainer: {
     alignItems: "center",
   },
-  illustration: {
-    width: 180,
-    height: 200,
-    marginBottom: 16,
-    borderRadius: 30,
-  },
   form: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -168,7 +163,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#111827",
   },
-
   signUpButton: {
     backgroundColor: "#fbbf24",
     padding: 15,

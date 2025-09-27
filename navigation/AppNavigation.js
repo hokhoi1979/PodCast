@@ -14,6 +14,7 @@ import ShopScreen from "../pages/ShopScreen/ShopScreen";
 
 // Custom TabBar
 import CustomTabBar from "../components/CustomTabBar/CustomTabBar";
+import AdminScreen from "../pages/AdminScreen/AdminScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -45,7 +46,7 @@ export default function AppNavigation() {
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="MainApp" component={MainTabNavigator} />
-        <Stack.Screen name="Admin" component={ProfileScreen} />
+        <Stack.Screen name="Admin" component={AdminScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

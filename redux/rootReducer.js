@@ -1,7 +1,10 @@
 import { combineReducers } from "redux";
-import accountReducers from "./auth/authSlice";
+import accountReducers from "./auth/loginSlice";
+import registerReducer from "./auth/registerSlice";
+
 const rootReducer = combineReducers({
-  auth: accountReducers, // Fix: remove the () - it's not a function call
+  auth: accountReducers,
+  register: registerReducer, // Thêm register reducer
 });
 
 export default rootReducer;
