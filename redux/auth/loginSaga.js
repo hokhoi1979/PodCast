@@ -3,22 +3,44 @@ import { jwtDecode } from "jwt-decode";
 import Toast from "react-native-toast-message";
 import { all, call, put, takeLatest } from "redux-saga/effects";
 import api from "../../config/apiConfig";
-import { FETCH_API_LOGIN, fetchFail, fetchSuccess } from "./authSlice";
+import { FETCH_API_LOGIN, fetchFail, fetchSuccess } from "./loginSlice";
 
 export function* LoginSaga(action) {
   try {
+    console.log("Login payload:", action.payload);
+
     const response = yield call(api.post, "/api/auth/login", action.payload);
+    console.log("Login response:", response.data);
 
     const accessToken = response?.data?.token;
 
     if (accessToken) {
       const decodedUser = jwtDecode(accessToken);
+      console.log("Decoded JWT:", decodedUser);
 
       yield call(AsyncStorage.setItem, "accessToken", accessToken);
+      // user Details with role
+      let userData = { ...response.data };
+
+      try {
+        if (decodedUser.sub) {
+          const userDetailsResponse = yield call(
+            api.get,
+            `/api/users/${decodedUser.sub}`
+          );
+
+          userData = {
+            ...userData,
+            ...userDetailsResponse.data,
+          };
+        }
+      } catch (apiError) {
+        Toast.show({ type: "error", text1: "Failed to fetch user details!" });
+      }
 
       yield put(
         fetchSuccess({
-          user: response.data,
+          user: userData,
           token: decodedUser,
         })
       );
@@ -32,12 +54,6 @@ export function* LoginSaga(action) {
     }
   } catch (error) {
     Toast.show({ type: "error", text1: "Login failed!" });
-    console.error("Full error:", {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-      url: error.config?.url,
-    });
 
     let errorMessage = "Login failed!";
     if (error.response?.data?.message) {
