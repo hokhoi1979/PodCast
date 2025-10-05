@@ -1,5 +1,6 @@
+import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BarChart3, LogOut, Shield, Users } from "lucide-react-native";
+import { LogOut } from "lucide-react-native";
 import React from "react";
 import {
   Alert,
@@ -11,20 +12,69 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
+import { getAllProduct } from "../../redux/Admin/Product/fetchProduct/getAllProductSlice";
 import { logout } from "../../redux/auth/loginSlice";
 
 export default function AdminScreen({ navigation }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
 
+  const adminFeatures = [
+    {
+      id: 1,
+      title: "Quản lý danh mục",
+      icon: "folder",
+      color: "#FF6B35",
+      onPress: () => navigation.navigate("CategoryManagement"),
+    },
+    {
+      id: 2,
+      title: "Quản lý podcast",
+      icon: "headphones",
+      color: "#4ECDC4",
+      onPress: () => {
+        dispatch(getAllProduct({ page: 1, size: 50 }));
+        navigation.navigate("PodcastManagement");
+      },
+    },
+    {
+      id: 3,
+      title: "Quản lý người dùng",
+      icon: "users",
+      color: "#45B7D1",
+      onPress: () => navigation.navigate("UserManagement"),
+    },
+    {
+      id: 4,
+      title: "Product Management",
+      icon: "box",
+      color: "#96CEB4",
+      onPress: () => navigation.navigate("ProductManagement"),
+    },
+    {
+      id: 5,
+      title: "Báo cáo",
+      icon: "file-text",
+      color: "#FFEAA7",
+      onPress: () => navigation.navigate("Reports"),
+    },
+    {
+      id: 6,
+      title: "Cài đặt",
+      icon: "settings",
+      color: "#DDA0DD",
+      onPress: () => navigation.navigate("AdminSettings"),
+    },
+  ];
+
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
+    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", [
       {
-        text: "Cancel",
+        text: "Hủy",
         style: "cancel",
       },
       {
-        text: "Logout",
+        text: "Đăng xuất",
         style: "destructive",
         onPress: async () => {
           try {
@@ -32,14 +82,14 @@ export default function AdminScreen({ navigation }) {
             dispatch(logout());
             Toast.show({
               type: "success",
-              text1: "Admin logged out successfully!",
+              text1: "Đăng xuất thành công!",
             });
             navigation.replace("SignIn");
           } catch (error) {
             console.error("Logout error:", error);
             Toast.show({
               type: "error",
-              text1: "Logout failed!",
+              text1: "Đăng xuất thất bại!",
             });
           }
         },
@@ -51,85 +101,62 @@ export default function AdminScreen({ navigation }) {
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Shield size={32} color="#fff" />
-        <Text style={styles.headerTitle}>Admin Panel</Text>
+        <Text style={styles.headerTitle}>Bảng điều khiển Admin</Text>
+        <Text style={styles.headerSubtitle}>Quản lý hệ thống Podcast</Text>
       </View>
 
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeText}>
-          Welcome, {user?.username || "Admin"}!
+          Chào mừng, {user?.username || "Admin"}!
         </Text>
-        <Text style={styles.roleText}>Role: {user?.role || "admin"}</Text>
+        <Text style={styles.roleText}>Vai trò: {user?.role || "admin"}</Text>
       </View>
 
-      {/* Admin Menu */}
-      <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Users size={24} color="#8B5A2B" />
-          <View style={styles.menuTextContainer}>
-            <Text style={styles.menuTitle}>Manage Users</Text>
-            <Text style={styles.menuSubtitle}>
-              View and manage user accounts
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <BarChart3 size={24} color="#8B5A2B" />
-          <View style={styles.menuTextContainer}>
-            <Text style={styles.menuTitle}>Analytics</Text>
-            <Text style={styles.menuSubtitle}>
-              View app statistics and reports
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Shield size={24} color="#8B5A2B" />
-          <View style={styles.menuTextContainer}>
-            <Text style={styles.menuTitle}>System Settings</Text>
-            <Text style={styles.menuSubtitle}>Configure app settings</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Quick Stats */}
-      <View style={styles.statsSection}>
-        <Text style={styles.sectionTitle}>Quick Stats</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>150</Text>
-            <Text style={styles.statLabel}>Total Users</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>45</Text>
-            <Text style={styles.statLabel}>Active Today</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>320</Text>
-            <Text style={styles.statLabel}>Total Podcasts</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>New This Week</Text>
-          </View>
+      {/* Admin Features Grid */}
+      <View style={styles.featuresContainer}>
+        <Text style={styles.sectionTitle}>Chức năng quản lý</Text>
+        <View style={styles.featuresGrid}>
+          {adminFeatures.map((feature) => (
+            <TouchableOpacity
+              key={feature.id}
+              style={[styles.featureCard, { backgroundColor: feature.color }]}
+              onPress={feature.onPress}
+              activeOpacity={0.8}
+            >
+              <View style={styles.featureIconContainer}>
+                <Feather name={feature.icon} size={32} color="#fff" />
+              </View>
+              <Text style={styles.featureTitle}>{feature.title}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
-      {/* Debug Info */}
-      <View style={styles.debugSection}>
-        <Text style={styles.debugTitle}>Debug Info:</Text>
-        <Text style={styles.debugText}>
-          User: {JSON.stringify(user, null, 2)}
-        </Text>
+      {/* Quick Stats */}
+      <View style={styles.statsContainer}>
+        <Text style={styles.sectionTitle}>Thống kê nhanh</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>25</Text>
+            <Text style={styles.statLabel}>Danh mục</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>150</Text>
+            <Text style={styles.statLabel}>Podcast</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>1,250</Text>
+            <Text style={styles.statLabel}>Người dùng</Text>
+          </View>
+        </View>
       </View>
 
       {/* Logout Button */}
       <View style={styles.logoutSection}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <LogOut size={20} color="#fff" />
-          <Text style={styles.logoutText}>Admin Logout</Text>
+          <Text style={styles.logoutText}>Đăng xuất Admin</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -139,22 +166,26 @@ export default function AdminScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F0",
+    backgroundColor: "#F5F7FA",
   },
   header: {
-    backgroundColor: "#8B5A2B",
-    paddingTop: 50,
-    paddingBottom: 20,
+    backgroundColor: "#FF6B35",
+    paddingTop: 60,
     paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    paddingBottom: 30,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
   },
   headerTitle: {
-    color: "#fff",
     fontSize: 24,
     fontWeight: "700",
-    marginLeft: 12,
+    color: "#fff",
+    marginBottom: 5,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: "#fff",
+    opacity: 0.9,
   },
   welcomeSection: {
     backgroundColor: "#fff",
@@ -171,105 +202,88 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#2C1810",
+    color: "#2C3E50",
     marginBottom: 4,
   },
   roleText: {
     fontSize: 16,
-    color: "#8B5A2B",
+    color: "#FF6B35",
     fontWeight: "500",
   },
-  menuSection: {
-    backgroundColor: "#fff",
-    marginHorizontal: 16,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  menuTextContainer: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  menuTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2C1810",
-    marginBottom: 2,
-  },
-  menuSubtitle: {
-    fontSize: 14,
-    color: "#6B5B4F",
-  },
-  statsSection: {
-    margin: 16,
+  featuresContainer: {
+    padding: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#2C1810",
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2C3E50",
+    marginBottom: 15,
   },
-  statsGrid: {
+  featuresGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
-  statCard: {
-    backgroundColor: "#fff",
+  featureCard: {
     width: "48%",
-    padding: 16,
-    borderRadius: 12,
+    aspectRatio: 1,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 15,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 3,
+  },
+  featureIconContainer: {
+    marginBottom: 10,
+  },
+  featureTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#fff",
+    textAlign: "center",
+  },
+  statsContainer: {
+    padding: 20,
+    paddingTop: 0,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 5,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#8B5A2B",
-    marginBottom: 4,
+    color: "#2C3E50",
+    marginBottom: 5,
   },
   statLabel: {
-    fontSize: 12,
-    color: "#6B5B4F",
-    textAlign: "center",
-  },
-  debugSection: {
-    backgroundColor: "#f0f0f0",
-    margin: 16,
-    padding: 12,
-    borderRadius: 8,
-  },
-  debugTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  debugText: {
-    fontSize: 10,
-    color: "#666",
-    fontFamily: "monospace",
+    color: "#7F8C8D",
   },
   logoutSection: {
     marginHorizontal: 16,
     marginBottom: 30,
   },
   logoutButton: {
-    backgroundColor: "#E53E3E",
+    backgroundColor: "#E74C3C",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

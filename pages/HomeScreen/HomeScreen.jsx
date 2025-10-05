@@ -1,6 +1,7 @@
+import Slider from "@react-native-community/slider";
 import { Audio } from "expo-av";
 import { Image } from "expo-image";
-import { Heart, Pause, Play } from "lucide-react-native";
+import { Heart, Pause, Play, Volume2, VolumeX } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ScrollView,
@@ -24,6 +25,9 @@ export default function HomeScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const soundRef = useRef(null);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const prevVolumeRef = useRef(1);
 
   const dispatch = useDispatch();
   const { podcasts, loading, selectedPodcast, autoPlay } = useSelector(
@@ -36,17 +40,14 @@ export default function HomeScreen() {
     (state) => state.fetchPodcastByCate
   );
 
-  // Use API categories with "All" as first option
   const apiCategories = categories?.map((cat) => cat.name) || [];
   const sortedCategories = ["All", ...apiCategories];
 
-  // Determine which podcasts to show and loading state
   const displayPodcasts =
     selectedCategory === "All" ? podcasts : podcastsByCate;
   const isLoadingPodcasts =
     selectedCategory === "All" ? loading : podcastsByCateLoading;
 
-  // Fetch categories on mount
   useEffect(() => {
     dispatch(fetchAllCategory());
   }, [dispatch]);
@@ -108,16 +109,26 @@ export default function HomeScreen() {
         }
 
         soundRef.current = sound;
+        // đảm bảo tôn trọng volume hiện tại khi load lần đầu
+        await sound.setVolumeAsync(volume);
         setIsPlaying(!!autoPlay);
       } catch (e) {
         setIsPlaying(false);
       }
     };
+
     loadAndPlay();
     return () => {
       mounted = false;
     };
-  }, [selectedPodcast, autoPlay]);
+  }, [selectedPodcast, autoPlay]); // <-- đã bỏ `volume`
+
+  // Cập nhật volume mà không reload/phát lại
+  useEffect(() => {
+    if (soundRef.current) {
+      soundRef.current.setVolumeAsync(volume).catch(() => {});
+    }
+  }, [volume]);
 
   useEffect(() => {
     return () => {
@@ -144,9 +155,39 @@ export default function HomeScreen() {
     } catch (e) {}
   };
 
+  const handleVolumeChange = (v) => {
+    const val = Array.isArray(v) ? v[0] : v;
+    setVolume(val);
+    setMuted(val === 0);
+  };
+
+  const commitVolume = async (v) => {
+    const val = Array.isArray(v) ? v[0] : v;
+    if (soundRef.current) {
+      await soundRef.current.setVolumeAsync(val);
+    }
+    setMuted(val === 0);
+  };
+
+  const toggleMute = async () => {
+    const sound = soundRef.current;
+    if (!sound) return;
+    if (!muted) {
+      prevVolumeRef.current = volume || 0.5;
+      await sound.setVolumeAsync(0);
+      setVolume(0);
+      setMuted(true);
+    } else {
+      const newVol = prevVolumeRef.current || 1;
+      await sound.setVolumeAsync(newVol);
+      setVolume(newVol);
+      setMuted(false);
+    }
+  };
+
   const handleCategoryPress = (category) => {
     setSelectedCategory(category);
-    setDescExpanded(false); // Reset description expansion
+    setDescExpanded(false);
   };
 
   return (
@@ -157,7 +198,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Featured Podcast */}
         <View style={styles.featured}>
           <Image
             style={styles.featuredImage}
@@ -202,10 +242,39 @@ export default function HomeScreen() {
                 {isPlaying ? "Đang phát" : "Phát"}
               </Text>
             </TouchableOpacity>
+
+            <View style={styles.volumeRow}>
+              <TouchableOpacity
+                style={styles.volumeIconBtn}
+                onPress={toggleMute}
+                disabled={!selectedPodcast}
+              >
+                {muted || volume === 0 ? (
+                  <VolumeX size={18} color="#20B2AA" />
+                ) : (
+                  <Volume2 size={18} color="#20B2AA" />
+                )}
+              </TouchableOpacity>
+              <Slider
+                style={styles.volumeSlider}
+                minimumValue={0}
+                maximumValue={1}
+                step={0.01}
+                value={volume}
+                minimumTrackTintColor="#20B2AA"
+                maximumTrackTintColor="#E0E0E0"
+                thumbTintColor="#20B2AA"
+                onValueChange={handleVolumeChange}
+                onSlidingComplete={commitVolume}
+                disabled={!selectedPodcast}
+              />
+              <Text style={styles.volumeLabel}>
+                {Math.round(volume * 100)}%
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Categories */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -241,7 +310,6 @@ export default function HomeScreen() {
           )}
         </ScrollView>
 
-        {/* Podcast List */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {selectedCategory === "All"
@@ -300,7 +368,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F0",
   },
   contentContainer: {
-    paddingBottom: 100, // Add padding to avoid taskbar overlap
+    paddingBottom: 100,
   },
   featured: {
     flexDirection: "row",
@@ -350,7 +418,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 24,
-    alignSelf: "flex-start",
+    alignSelf: "flex-center",
     marginTop: 8,
   },
   playButtonText: {
@@ -359,7 +427,26 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
-
+  volumeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  volumeIconBtn: {
+    padding: 6,
+  },
+  volumeSlider: {
+    flex: 1,
+    marginHorizontal: 10,
+    height: 30,
+  },
+  volumeLabel: {
+    width: 42,
+    textAlign: "right",
+    fontSize: 12,
+    color: "#333",
+    fontWeight: "600",
+  },
   categoryScroll: {
     marginVertical: 8,
   },
@@ -389,7 +476,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
-
   section: {
     paddingHorizontal: 16,
     marginTop: 8,
