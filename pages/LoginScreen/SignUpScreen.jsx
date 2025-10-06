@@ -37,8 +37,8 @@ export default function SignUpScreen({ navigation }) {
     dispatch({
       type: FETCH_API_REGISTER,
       payload: {
-        email,
-        username: email,
+        email: email,
+        username: fullName,
         phoneNumber: digits,
         fullName,
         passwordHash: password,
@@ -83,20 +83,6 @@ export default function SignUpScreen({ navigation }) {
         {/* Full Name */}
         <View style={styles.inputContainer}>
           <Text style={styles.inputIcon}>
-            <User />
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            value={fullName}
-            onChangeText={setFullName}
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
-
-        {/* Email */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputIcon}>
             <Mail />
           </Text>
           <TextInput
@@ -105,6 +91,20 @@ export default function SignUpScreen({ navigation }) {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            placeholderTextColor="#9ca3af"
+          />
+        </View>
+
+        {/* Email */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputIcon}>
+            <User />
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            value={fullName}
+            onChangeText={setFullName}
             placeholderTextColor="#9ca3af"
           />
         </View>
