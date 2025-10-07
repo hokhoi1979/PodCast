@@ -1,8 +1,10 @@
+import { Ionicons } from "@expo/vector-icons"; // NEW
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   Modal,
@@ -16,12 +18,15 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
+import { deleteProductRequest } from "../../redux/Admin/Product/delete_product/deleteProductSlice";
 import { getAllProduct } from "../../redux/Admin/Product/fetchProduct/getAllProductSlice";
 import { productPostRequest } from "../../redux/Admin/Product/post_product/postProductSlice";
+import { updateProductRequest } from "../../redux/Admin/Product/update_Product/updateProductSlice";
 
 export default function ProductManagementScreen() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+
   const {
     loading: posting,
     postProduct,
@@ -32,29 +37,52 @@ export default function ProductManagementScreen() {
     product,
     pagination,
   } = useSelector((s) => s.fetchAllProduct);
+  const { loading: updating, updateProduct } = useSelector(
+    (s) => s.updateProduct || {}
+  ); // NEW
+  const { loading: deleting, deleteProduct } = useSelector(
+    (s) => s.deleteProduct || {}
+  ); // NEW
 
   const [showModal, setShowModal] = useState(false);
-
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState(null); // { uri, type, fileName }
+  const [image, setImage] = useState(null);
   const [stockQuantity, setStockQuantity] = useState("1");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
-    dispatch(getAllProduct({ page: 1, size: 50 })); // dùng 0-based
+    dispatch(getAllProduct({ page: 1, size: 50 }));
   }, [dispatch]);
 
-  // handle post result
   useEffect(() => {
     if (postProduct) {
       Toast.show({ type: "success", text1: "Đăng sản phẩm thành công" });
       setShowModal(false);
       resetForm();
-      // refresh list sau khi đăng
       dispatch(getAllProduct({ page: 1, size: 50 }));
     }
   }, [postProduct, dispatch]);
+
+  // NEW: handle update success
+  useEffect(() => {
+    if (updateProduct) {
+      Toast.show({ type: "success", text1: "Cập nhật sản phẩm thành công" });
+      setShowModal(false);
+      resetForm();
+      dispatch(getAllProduct({ page: 1, size: 50 }));
+    }
+  }, [updateProduct, dispatch]);
+
+  // NEW: handle delete success
+  useEffect(() => {
+    if (deleteProduct) {
+      Toast.show({ type: "success", text1: "Xóa sản phẩm thành công" });
+      dispatch(getAllProduct({ page: 1, size: 50 }));
+    }
+  }, [deleteProduct, dispatch]);
 
   useEffect(() => {
     if (error) {
@@ -68,6 +96,32 @@ export default function ProductManagementScreen() {
     setDescription("");
     setImage(null);
     setStockQuantity("1");
+    setIsEditing(false);
+    setEditingId(null);
+  };
+
+  const handleEdit = (item) => {
+    setIsEditing(true);
+    setEditingId(item.id);
+    setName(item.name || "");
+    setPrice(String(item.price || ""));
+    setDescription(item.description || "");
+    setStockQuantity(String(item.stockQuantity || 1));
+    setImage(item.imageUrl ? { uri: item.imageUrl } : null);
+    setShowModal(true);
+  };
+
+  const handleDelete = (id) => {
+    Alert.alert("Xác nhận xóa", "Bạn có chắc muốn xóa sản phẩm này?", [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: () => {
+          dispatch(deleteProductRequest(id));
+        },
+      },
+    ]);
   };
 
   const pickImage = async () => {
@@ -96,10 +150,6 @@ export default function ProductManagementScreen() {
       Toast.show({ type: "error", text1: "Nhập tên, giá và số lượng" });
       return;
     }
-    if (!image?.uri) {
-      Toast.show({ type: "error", text1: "Vui lòng chọn ảnh sản phẩm" });
-      return;
-    }
 
     const priceNum = Number(price);
     const qtyNum = parseInt(stockQuantity, 10);
@@ -108,14 +158,6 @@ export default function ProductManagementScreen() {
       return;
     }
 
-    // FormData chỉ chứa file
-    const form = new FormData();
-    form.append("file", {
-      uri: image.uri,
-      name: image.fileName || "product.jpg",
-      type: image.type || "image/jpeg",
-    });
-
     const query = {
       name: name.trim(),
       description: description?.trim() || "",
@@ -123,7 +165,44 @@ export default function ProductManagementScreen() {
       stockQuantity: qtyNum,
     };
 
-    dispatch(productPostRequest({ form, query }));
+    if (isEditing) {
+      // UPDATE
+      const form = new FormData();
+      const hasNewImage = image?.uri && !image.uri.startsWith("http");
+
+      if (hasNewImage) {
+        // Có ảnh mới → append file
+        form.append("file", {
+          uri: image.uri,
+          name: image.fileName || "product.jpg",
+          type: image.type || "image/jpeg",
+        });
+      } else {
+        // Không có ảnh → append dummy text để FormData không rỗng
+        form.append("dummy", "no-file");
+      }
+
+      dispatch(
+        updateProductRequest({
+          formData: form,
+          productId: editingId,
+          query,
+        })
+      );
+    } else {
+      // CREATE
+      if (!image?.uri) {
+        Toast.show({ type: "error", text1: "Vui lòng chọn ảnh sản phẩm" });
+        return;
+      }
+      const form = new FormData();
+      form.append("file", {
+        uri: image.uri,
+        name: image.fileName || "product.jpg",
+        type: image.type || "image/jpeg",
+      });
+      dispatch(productPostRequest({ form, query }));
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -142,23 +221,46 @@ export default function ProductManagementScreen() {
         <Text style={styles.cardPrice}>
           {item.price != null ? `${item.price.toLocaleString("vi-VN")}₫` : "—"}
         </Text>
+        <Text style={styles.cardStock}>SL: {item.stockQuantity ?? 0}</Text>
         {item.description ? (
           <Text style={styles.cardDesc} numberOfLines={2}>
             {item.description}
           </Text>
         ) : null}
       </View>
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: "#20B2AA" }]}
+          onPress={() => handleEdit(item)}
+          disabled={updating || deleting}
+        >
+          {updating ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons name="pencil" size={18} color="#fff" />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: "#E74C3C" }]}
+          onPress={() => handleDelete(item.id)}
+          disabled={updating || deleting}
+        >
+          {deleting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons name="trash" size={18} color="#fff" />
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
     <View style={styles.wrapper}>
-      {/* Header with Back to Admin */}
       <View style={styles.headerBar}>
         <TouchableOpacity
           onPress={() => navigation.navigate("Admin")}
           style={styles.backBtn}
-          activeOpacity={0.7}
         >
           <Text style={styles.backIcon}>‹</Text>
           <Text style={styles.backLabel}>Admin</Text>
@@ -180,36 +282,45 @@ export default function ProductManagementScreen() {
             product?.length ? { padding: 12 } : styles.center
           }
           refreshing={loadingList}
-          onRefresh={() => dispatch(getAllProduct({ page: 0, size: 12 }))} // truyền đúng params
+          onRefresh={() => dispatch(getAllProduct({ page: 1, size: 50 }))}
           ListEmptyComponent={<Text>Chưa có sản phẩm</Text>}
         />
       )}
 
-      {/* Floating action button */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => setShowModal(true)}
-        activeOpacity={0.8}
+        onPress={() => {
+          resetForm();
+          setShowModal(true);
+        }}
       >
         <Text style={styles.fabPlus}>＋</Text>
       </TouchableOpacity>
 
-      {/* Create product modal */}
       <Modal
         visible={showModal}
         animationType="slide"
         transparent
-        onRequestClose={() => setShowModal(false)}
+        onRequestClose={() => {
+          setShowModal(false);
+          resetForm();
+        }}
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Đăng sản phẩm</Text>
-              <Pressable onPress={() => setShowModal(false)}>
+              <Text style={styles.modalTitle}>
+                {isEditing ? "Sửa sản phẩm" : "Đăng sản phẩm"}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
+              >
                 <Text style={styles.closeText}>Đóng</Text>
               </Pressable>
             </View>
-
             <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
               <Text style={styles.label}>Tên sản phẩm</Text>
               <TextInput
@@ -218,7 +329,6 @@ export default function ProductManagementScreen() {
                 onChangeText={setName}
                 placeholder="Nhập tên"
               />
-
               <Text style={styles.label}>Giá</Text>
               <TextInput
                 style={styles.input}
@@ -227,8 +337,6 @@ export default function ProductManagementScreen() {
                 placeholder="Nhập giá"
                 keyboardType="numeric"
               />
-
-              {/* NEW: Stock quantity */}
               <Text style={styles.label}>Số lượng tồn</Text>
               <TextInput
                 style={styles.input}
@@ -237,7 +345,6 @@ export default function ProductManagementScreen() {
                 placeholder="Nhập số lượng"
                 keyboardType="numeric"
               />
-
               <Text style={styles.label}>Mô tả</Text>
               <TextInput
                 style={[styles.input, styles.multiline]}
@@ -247,7 +354,6 @@ export default function ProductManagementScreen() {
                 multiline
                 numberOfLines={4}
               />
-
               <Text style={styles.label}>Hình ảnh</Text>
               <View style={styles.imageRow}>
                 <TouchableOpacity style={styles.pickBtn} onPress={pickImage}>
@@ -257,16 +363,20 @@ export default function ProductManagementScreen() {
                   <Image source={{ uri: image.uri }} style={styles.preview} />
                 ) : null}
               </View>
-
               <TouchableOpacity
-                style={[styles.submitBtn, posting && { opacity: 0.6 }]}
+                style={[
+                  styles.submitBtn,
+                  (posting || updating) && { opacity: 0.6 },
+                ]}
                 onPress={submit}
-                disabled={posting}
+                disabled={posting || updating}
               >
-                {posting ? (
+                {posting || updating ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.submitText}>Đăng sản phẩm</Text>
+                  <Text style={styles.submitText}>
+                    {isEditing ? "Cập nhật" : "Đăng sản phẩm"}
+                  </Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -334,6 +444,26 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: "600" },
   cardPrice: { color: "#FF6B35", marginTop: 2, fontWeight: "700" },
   cardDesc: { color: "#666", marginTop: 4, fontSize: 12 },
+  cardStock: {
+    color: "#2C3E50",
+    marginTop: 2,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  cardActions: {
+    justifyContent: "center",
+    gap: 8,
+  },
+  actionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionText: {
+    fontSize: 16,
+  },
 
   // FAB
   fab: {
