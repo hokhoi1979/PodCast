@@ -236,6 +236,27 @@ export default function HomeScreen() {
       >
         <SafeAreaView>
           <Header />
+          <View style={{ padding: 10 }}>
+            <View style={styles.searchBox}>
+              <Ionicons
+                name="search"
+                size={20}
+                color="#888"
+                style={{ marginRight: 8 }}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Tìm kiếm..."
+                value={search}
+                onChangeText={setSearch}
+              />
+            </View>
+            {search.length > 0 && (
+              <Text style={styles.resultText}>
+                Kết quả tìm kiếm ({filtered?.length || 0})
+              </Text>
+            )}
+          </View>
 
           <View style={styles.featured}>
             <Image
@@ -314,28 +335,6 @@ export default function HomeScreen() {
                 </Text>
               </View>
             </View>
-          </View>
-
-          <View style={{ padding: 10 }}>
-            <View style={styles.searchBox}>
-              <Ionicons
-                name="search"
-                size={20}
-                color="#888"
-                style={{ marginRight: 8 }}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Tìm kiếm..."
-                value={search}
-                onChangeText={setSearch}
-              />
-            </View>
-            {search.length > 0 && (
-              <Text style={styles.resultText}>
-                Kết quả tìm kiếm ({filtered?.length || 0})
-              </Text>
-            )}
           </View>
 
           <ScrollView
@@ -562,7 +561,6 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     paddingHorizontal: 10,
-    marginBottom: 16,
     height: 45,
   },
   input: { flex: 1, fontSize: 16 },

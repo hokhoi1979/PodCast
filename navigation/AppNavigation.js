@@ -17,6 +17,7 @@ import CustomTabBar from "../components/CustomTabBar/CustomTabBar";
 import AdminScreen from "../pages/AdminScreen/AdminScreen";
 import CategoryManagementScreen from "../pages/AdminScreen/CategoryManagementScreen";
 import ProductManagementScreen from "../pages/AdminScreen/ProductManagementScreen";
+import ChatwithAIScreen from "../pages/ChatwithAI/ChatwitAIScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -27,8 +28,9 @@ function MainTabNavigator() {
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
+      initialRouteName="Home"
     >
-      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Chat" component={ChatwithAIScreen} />
       <Tab.Screen name="Favourite" component={FavouriteScreen} />
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Shop" component={ShopScreen} />
