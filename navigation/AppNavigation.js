@@ -6,7 +6,7 @@ import React from "react";
 // Pages
 import FavouriteScreen from "../pages/FavouriteScreen/FavouriteScreen";
 import HomeScreen from "../pages/HomeScreen/HomeScreen";
-import SignInScreen from "../pages/LoginScreen/SignInScreen"; // Add this
+import SignInScreen from "../pages/LoginScreen/SignInScreen";
 import SignUpScreen from "../pages/LoginScreen/SignUpScreen";
 import ProfileScreen from "../pages/ProfileScreen/ProfileScreen";
 import SearchScreen from "../pages/SearchScreen/SearchScreen";
@@ -14,6 +14,9 @@ import ShopScreen from "../pages/ShopScreen/ShopScreen";
 
 // Custom TabBar
 import CustomTabBar from "../components/CustomTabBar/CustomTabBar";
+import AdminScreen from "../pages/AdminScreen/AdminScreen";
+import CategoryManagementScreen from "../pages/AdminScreen/CategoryManagementScreen";
+import ProductManagementScreen from "../pages/AdminScreen/ProductManagementScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -40,12 +43,20 @@ export default function AppNavigation() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="SignIn" // Start with SignIn
+        initialRouteName="SignIn"
       >
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="MainApp" component={MainTabNavigator} />
-        <Stack.Screen name="Admin" component={ProfileScreen} />
+        <Stack.Screen name="Admin" component={AdminScreen} />
+        <Stack.Screen
+          name="CategoryManagement"
+          component={CategoryManagementScreen}
+        />
+        <Stack.Screen
+          name="ProductManagement"
+          component={ProductManagementScreen}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

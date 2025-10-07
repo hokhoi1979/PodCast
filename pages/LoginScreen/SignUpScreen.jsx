@@ -9,11 +9,12 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-import { useDispatch } from "react-redux";
-import { FETCH_API_REGISTER } from "../../redux/auth/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { FETCH_API_REGISTER } from "../../redux/auth/registerSlice"; // Thay đổi import
 
 export default function SignUpScreen({ navigation }) {
   const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.register); // Thêm selector
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,11 +33,12 @@ export default function SignUpScreen({ navigation }) {
       Toast.show({ type: "error", text1: "Số điện thoại không hợp lệ" });
       return;
     }
+
     dispatch({
       type: FETCH_API_REGISTER,
       payload: {
-        email,
-        username: email,
+        email: email,
+        username: fullName,
         phoneNumber: digits,
         fullName,
         passwordHash: password,
@@ -59,37 +61,26 @@ export default function SignUpScreen({ navigation }) {
         />
       </View>
 
-      {/* Phone Number */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputIcon}>+84</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Phone Number"
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          keyboardType="phone-pad"
-          placeholderTextColor="#9ca3af"
-          maxLength={14}
-        />
-      </View>
-
       {/* Form */}
       <View style={styles.form}>
-        {/* Full Name */}
+        {/* Error message */}
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        {/* Phone Number */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputIcon}>
-            <User />
-          </Text>
+          <Text style={styles.inputIcon}>+84</Text>
           <TextInput
             style={styles.input}
-            placeholder="Full Name"
-            value={fullName}
-            onChangeText={setFullName}
+            placeholder="Phone Number"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
             placeholderTextColor="#9ca3af"
+            maxLength={14}
           />
         </View>
 
-        {/* Email */}
+        {/* Full Name */}
         <View style={styles.inputContainer}>
           <Text style={styles.inputIcon}>
             <Mail />
@@ -100,6 +91,20 @@ export default function SignUpScreen({ navigation }) {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            placeholderTextColor="#9ca3af"
+          />
+        </View>
+
+        {/* Email */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputIcon}>
+            <User />
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            value={fullName}
+            onChangeText={setFullName}
             placeholderTextColor="#9ca3af"
           />
         </View>
@@ -120,8 +125,14 @@ export default function SignUpScreen({ navigation }) {
         </View>
 
         {/* Button */}
-        <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-          <Text style={styles.signUpText}>Sign Up</Text>
+        <TouchableOpacity
+          style={[styles.signUpButton, loading && styles.disabledButton]}
+          onPress={handleSignUp}
+          disabled={loading}
+        >
+          <Text style={styles.signUpText}>
+            {loading ? "Signing Up..." : "Sign Up"}
+          </Text>
         </TouchableOpacity>
 
         {/* Or */}
@@ -151,7 +162,7 @@ export default function SignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fbe7ba", // cùng nền với SignIn
+    backgroundColor: "#fbe7ba",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
@@ -164,7 +175,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     width: "100%",
-    height: "50%",
+    height: "60%",
   },
   inputContainer: {
     flexDirection: "row",
@@ -211,5 +222,14 @@ const styles = StyleSheet.create({
   linkText: {
     color: "#fbbf24",
     fontWeight: "bold",
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: 10,
+    fontSize: 14,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
