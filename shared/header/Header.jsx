@@ -16,9 +16,6 @@ export default function Header() {
         <Text style={styles.title}>PodcastVN</Text>
       </View>
       <View style={styles.rightSide}>
-        <TouchableOpacity onPress={() => navigation.navigate("Search")}>
-          <EvilIcons name="search" size={24} color="black" />
-        </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Shop")}>
           <AntDesign name="shopping-cart" size={24} color="black" />
         </TouchableOpacity>
