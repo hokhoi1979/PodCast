@@ -9,7 +9,6 @@ import HomeScreen from "../pages/HomeScreen/HomeScreen";
 import SignInScreen from "../pages/LoginScreen/SignInScreen";
 import SignUpScreen from "../pages/LoginScreen/SignUpScreen";
 import ProfileScreen from "../pages/ProfileScreen/ProfileScreen";
-import SearchScreen from "../pages/SearchScreen/SearchScreen";
 import ShopScreen from "../pages/ShopScreen/ShopScreen";
 
 // Custom TabBar

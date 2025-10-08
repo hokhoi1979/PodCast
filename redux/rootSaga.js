@@ -10,6 +10,7 @@ import watchFetchPodcastByCateSaga from "./User/fetchPodcastByCate/fetchPodcastB
 import watchPostFavoriteSaga from "./User/favourite/postFavortie/postFavoriteSaga";
 import watchGetFavoriteSaga from "./User/favourite/getFavorite/getFavoriteSaga";
 import watchDeleteFavoriteSaga from "./User/favourite/deleteFavorite/deleteFavoriteSaga";
+import watchPostChatSaga from "./ChatAI/chatAiSaga";
 
 export default function* rootSaga() {
   yield all([
@@ -27,5 +28,6 @@ export default function* rootSaga() {
     watchPostFavoriteSaga(),
     watchGetFavoriteSaga(),
     watchDeleteFavoriteSaga(),
+    watchPostChatSaga(),
   ]);
 }
