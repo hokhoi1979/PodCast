@@ -10,6 +10,7 @@ import fetchPodcastByCateReducer from "./User/fetchPodcastByCate/fetchPodcastByC
 import postFavoriteReducer from "./User/favourite/postFavortie/postFavoriteSlice";
 import getFavoriteReducer from "./User/favourite/getFavorite/getFavoriteSlice";
 import deleteFavoriteReducer from "./User/favourite/deleteFavorite/deleteFavoriteSlice";
+import postChatReducer from "./ChatAI/chatAiSlice";
 
 const rootReducer = combineReducers({
   auth: accountReducers,
@@ -26,6 +27,7 @@ const rootReducer = combineReducers({
   postFavorite: postFavoriteReducer,
   getFavorite: getFavoriteReducer,
   deleteFavorite: deleteFavoriteReducer,
+  chatAI: postChatReducer,
 });
 
 export default rootReducer;
