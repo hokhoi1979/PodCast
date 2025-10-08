@@ -9,14 +9,16 @@ import HomeScreen from "../pages/HomeScreen/HomeScreen";
 import SignInScreen from "../pages/LoginScreen/SignInScreen";
 import SignUpScreen from "../pages/LoginScreen/SignUpScreen";
 import ProfileScreen from "../pages/ProfileScreen/ProfileScreen";
-import SearchScreen from "../pages/SearchScreen/SearchScreen";
 import ShopScreen from "../pages/ShopScreen/ShopScreen";
 
 // Custom TabBar
 import CustomTabBar from "../components/CustomTabBar/CustomTabBar";
 import AdminScreen from "../pages/AdminScreen/AdminScreen";
 import CategoryManagementScreen from "../pages/AdminScreen/CategoryManagementScreen";
+import PodcastManagementScreen from "../pages/AdminScreen/PodcastManagementScreen";
 import ProductManagementScreen from "../pages/AdminScreen/ProductManagementScreen";
+import ChatwithAIScreen from "../pages/ChatwithAI/ChatwitAIScreen";
+import LetterScreen from "../pages/Letter/LetterScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -27,8 +29,9 @@ function MainTabNavigator() {
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
+      initialRouteName="Home"
     >
-      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Chat" component={ChatwithAIScreen} />
       <Tab.Screen name="Favourite" component={FavouriteScreen} />
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Shop" component={ShopScreen} />
@@ -56,6 +59,15 @@ export default function AppNavigation() {
         <Stack.Screen
           name="ProductManagement"
           component={ProductManagementScreen}
+        />
+        <Stack.Screen
+          name="PodcastManagement"
+          component={PodcastManagementScreen}
+        />
+        <Stack.Screen
+          name="Letter"
+          component={LetterScreen}
+          options={{ title: "Gửi Thư" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

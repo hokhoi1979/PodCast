@@ -15,7 +15,6 @@ function* fetchCategorySaga(action) {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("Fetch Category response:", response.data);
     yield put(fetchAllCategorySuccess(response.data));
   } catch (error) {
     let errorMessage = "Fetch categories failed!";

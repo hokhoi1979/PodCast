@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   preview: { width: 60, height: 60, borderRadius: 8, backgroundColor: "#eee" },
   submitBtn: {
     marginTop: 18,
-    backgroundColor: "#FF6B35",
+    backgroundColor: "#s",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
