@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,8 +11,13 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import { postChat } from "../../redux/ChatAI/chatAiSlice";
 
 export default function ChatwithAIScreen() {
+  const dispatch = useDispatch();
+  const { chat, loading, error } = useSelector((state) => state.chatAI);
+
   const [messages, setMessages] = useState([
     {
       id: "1",
@@ -22,31 +27,46 @@ export default function ChatwithAIScreen() {
   ]);
   const [input, setInput] = useState("");
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-
-    const newMsg = {
-      id: Date.now().toString(),
-      text: input,
-      sender: "user",
-    };
-
-    setMessages((prev) => [...prev, newMsg]);
-    setInput("");
-
-    // Giả lập phản hồi AI sau 1.2s
-    setTimeout(() => {
+  // 🧠 Lắng nghe thay đổi từ Redux
+  useEffect(() => {
+    if (chat && chat.reply) {
       setMessages((prev) => [
-        ...prev,
+        ...prev.filter((m) => !m.id.includes("_loading")),
+        { id: Date.now().toString(), text: chat.reply, sender: "ai" },
+      ]);
+    }
+
+    if (error) {
+      setMessages((prev) => [
+        ...prev.filter((m) => !m.id.includes("_loading")),
         {
           id: Date.now().toString(),
-          text: "AI đang suy nghĩ... 🤔\nBạn có thể kể thêm về điều đó không?",
+          text: "Lỗi khi gửi đến AI 😢",
           sender: "ai",
         },
       ]);
-    }, 1200);
+    }
+  }, [chat, error]);
+
+  // 🚀 Gửi tin nhắn
+  const sendMessage = () => {
+    if (!input.trim()) return;
+
+    const userMsg = { id: Date.now().toString(), text: input, sender: "user" };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+
+    const loadingMsg = {
+      id: Date.now().toString() + "_loading",
+      text: "AI đang suy nghĩ... 🤔",
+      sender: "ai",
+    };
+    setMessages((prev) => [...prev, loadingMsg]);
+
+    dispatch(postChat({ context: input }));
   };
 
+  // 🗨️ Render từng tin nhắn
   const renderItem = ({ item }) => {
     const isUser = item.sender === "user";
     return (
@@ -88,7 +108,7 @@ export default function ChatwithAIScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 480 }}
       />
 
-      {/* Ô nhập tin nhắn */}
+      {/* Ô nhập và nút gửi */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 80}

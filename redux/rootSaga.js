@@ -9,6 +9,7 @@ import watchPostProductSaga from "./Admin/Product/post_product/postProductSaga";
 import watchUpdateProductSaga from "./Admin/Product/update_Product/updateProductSaga";
 import watchLogin from "./auth/loginSaga";
 import watchRegister from "./auth/registerSaga";
+import watchPostChatSaga from "./ChatAI/chatAiSaga";
 import watchGetComments from "./User/comment/fetch_comment/fetchCommentSaga";
 import watchPostComment from "./User/comment/post_comment/postCommentSaga";
 import watchDeleteFavoriteSaga from "./User/favourite/deleteFavorite/deleteFavoriteSaga";
@@ -45,5 +46,6 @@ export default function* rootSaga() {
     watchGetComments(),
     watchPostComment(),
     watchPostLetter(),
+    watchPostChatSaga(),
   ]);
 }

@@ -9,6 +9,7 @@ import postProductReducer from "./Admin/Product/post_product/postProductSlice";
 import updateProductReducer from "./Admin/Product/update_Product/updateProductSlice";
 import accountReducers from "./auth/loginSlice";
 import registerReducer from "./auth/registerSlice";
+import postChatReducer from "./ChatAI/chatAiSlice";
 import getCommentsReducer from "./User/comment/fetch_comment/fetchCommentSlice";
 import postCommentReducer from "./User/comment/post_comment/postCommentSilce";
 import deleteFavoriteReducer from "./User/favourite/deleteFavorite/deleteFavoriteSlice";
@@ -45,6 +46,7 @@ const rootReducer = combineReducers({
   getComments: getCommentsReducer, // NEW
   postComment: postCommentReducer, // NEW
   postLetter: postLetterReducer,
+  chatAI: postChatReducer,
 });
 
 export default rootReducer;
