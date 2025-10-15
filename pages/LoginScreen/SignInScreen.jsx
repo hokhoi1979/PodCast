@@ -34,12 +34,17 @@ export default function SignInScreen({ navigation }) {
     });
   };
 
-  // Navigation logic when user changes
   useEffect(() => {
     if (user) {
-      const role =
-        user?.role || user?.authorities?.[0] || user?.user?.role || "user";
+      if (!user.active) {
+        Toast.show({
+          type: "error",
+          text1: "Tài khoản của bạn đã bị khóa!",
+        });
+        return;
+      }
 
+      const role = user?.role || user?.authorities?.[0]?.authority || "user";
       const isAdmin = String(role).toLowerCase().includes("admin");
 
       if (isAdmin) {

@@ -36,16 +36,18 @@ export default function FavouriteScreen() {
 
   useEffect(() => {
     if (getFavo?.content) {
-      const favIds = getFavo.content.map((item) => item?.podcast?.id);
+      const favIds = getFavo.content.map((item) => item?.podcastId);
       setCheckFavo(favIds);
     }
   }, [getFavo]);
 
+  // console.log("DATA", getFavo);
+
   useEffect(() => {
-    if (getFavo?.content) setFavourites(getFavo.content);
+    if (getFavo?.content) setFavourites(getFavo?.content);
   }, [getFavo]);
 
-  console.log("IDD", checkFavo);
+  console.log("IDD", favourites);
 
   useEffect(() => {
     return () => {
@@ -211,12 +213,9 @@ export default function FavouriteScreen() {
             style={styles.card}
             onPress={() => handleSelectPodcast(item)}
           >
-            <Image
-              source={{ uri: item?.podcast?.imageUrl }}
-              style={styles.image}
-            />
+            <Image source={{ uri: item?.podcastImage }} style={styles.image} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{item?.podcast?.title}</Text>
+              <Text style={styles.title}>{item?.podcastTitle}</Text>
               <Text style={styles.subtitle} numberOfLines={2}>
                 {item?.podcast?.description}
               </Text>

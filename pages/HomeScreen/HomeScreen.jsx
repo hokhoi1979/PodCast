@@ -79,6 +79,8 @@ export default function HomeScreen() {
         )
       : displayPodcasts;
 
+  console.log("DUC", podcasts);
+
   // Fetch comments khi mở modal
   useEffect(() => {
     if (showCommentModal && selectedPodcast?.id) {
@@ -124,7 +126,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (getFavo?.content) {
-      const favIds = getFavo.content.map((item) => item.podcast?.id);
+      const favIds = getFavo.content.map((item) => item.podcastId);
       setFavorites(favIds);
     }
   }, [getFavo]);
@@ -326,7 +328,6 @@ export default function HomeScreen() {
             )}
           </View>
 
-          {/* NOW PLAYING CARD */}
           <View style={styles.featured}>
             <Image
               style={styles.featuredImage}
@@ -362,7 +363,6 @@ export default function HomeScreen() {
                 </>
               )}
 
-              {/* PLAYER CONTROLS */}
               {selectedPodcast && (
                 <View style={styles.playerContainer}>
                   {duration > 0 && (
