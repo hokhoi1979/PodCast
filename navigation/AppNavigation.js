@@ -19,6 +19,7 @@ import PodcastManagementScreen from "../pages/AdminScreen/PodcastManagementScree
 import ProductManagementScreen from "../pages/AdminScreen/ProductManagementScreen";
 import ChatwithAIScreen from "../pages/ChatwithAI/ChatwitAIScreen";
 import LetterScreen from "../pages/Letter/LetterScreen";
+import UserManagementScreen from "../pages/AdminScreen/UserManagementScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -64,6 +65,7 @@ export default function AppNavigation() {
           name="PodcastManagement"
           component={PodcastManagementScreen}
         />
+        <Stack.Screen name="UserManagement" component={UserManagementScreen} />
         <Stack.Screen
           name="Letter"
           component={LetterScreen}

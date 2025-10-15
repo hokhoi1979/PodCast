@@ -19,6 +19,9 @@ import watchGetAllPodcastSaga from "./User/fetchAllPodcast/getAllPodcastSaga";
 import watchFetchCategorySaga from "./User/fetchCategory/fetchCategorySaga";
 import watchFetchPodcastByCateSaga from "./User/fetchPodcastByCate/fetchPodcastByCateSaga";
 import watchPostLetter from "./User/letter/postLetterSaga";
+import watchGetAllUserSaga from "./User/manageUser/getAllUser/getAllUserSaga";
+import watchBanUserSaga from "./User/manageUser/banUser/banUserSaga";
+import watchUnBanUserSaga from "./User/manageUser/unBanUser/unBanUserSaga";
 
 export default function* rootSaga() {
   yield all([
@@ -33,6 +36,11 @@ export default function* rootSaga() {
     watchPostProductSaga(),
     watchUpdateProductSaga(),
     watchDeleteProductSaga(),
+
+    //User
+    watchGetAllUserSaga(),
+    watchBanUserSaga(),
+    watchUnBanUserSaga(),
 
     //User - favorite
     watchPostFavoriteSaga(),

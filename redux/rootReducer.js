@@ -19,6 +19,9 @@ import getAllPodcastReducer from "./User/fetchAllPodcast/getAllPodcastSlice";
 import fetchCategoryReducer from "./User/fetchCategory/fetchCategorySlice";
 import fetchPodcastByCateReducer from "./User/fetchPodcastByCate/fetchPodcastByCateSlice";
 import postLetterReducer from "./User/letter/postLetterSlice";
+import getAllUserReducer from "./User/manageUser/getAllUser/getAllUserSlice";
+import banUserReducer from "./User/manageUser/banUser/banUserSlice";
+import unBanUserReducer from "./User/manageUser/unBanUser/unBanUserSlice";
 
 const rootReducer = combineReducers({
   auth: accountReducers,
@@ -28,6 +31,10 @@ const rootReducer = combineReducers({
   fetchAllCategory: fetchCategoryReducer,
   fetchPodcastByCate: fetchPodcastByCateReducer,
   categoryManagement: categoryManagementReducer,
+  getAllUser: getAllUserReducer,
+  banUSer: banUserReducer,
+  unBanUser: unBanUserReducer,
+
   //Product
   deleteProduct: deleteProductReducer,
   postProduct: postProductReducer,
