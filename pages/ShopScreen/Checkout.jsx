@@ -42,7 +42,7 @@ export default function CheckoutScreen({ navigation }) {
   // Local state
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
-
+  console.log("profile checkout", profile);
   // Fetch order
   useEffect(() => {
     if (id) dispatch(getAllOrder(id));
@@ -116,6 +116,20 @@ export default function CheckoutScreen({ navigation }) {
   // Trang Checkout gốc
   return (
     <ScrollView style={styles.container}>
+      {/* 🔙 Nút quay về cửa hàng */}
+      <TouchableOpacity
+        style={styles.backBtn}
+        onPress={() =>
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "MainApp", params: { screen: "Shop" } }],
+          })
+        }
+      >
+        <Ionicons name="arrow-back" size={20} color="#fff" />
+        <Text style={styles.backText}>Quay về cửa hàng</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>🧾 Thanh toán</Text>
 
       {loading && <ActivityIndicator size="large" color="#facc15" />}
@@ -338,4 +352,15 @@ const styles = StyleSheet.create({
   },
   closeText: { color: "#fff", fontWeight: "600" },
   loading: { flex: 1, justifyContent: "center", alignItems: "center" },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#facc15",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignSelf: "flex-start",
+    marginBottom: 10,
+  },
+  backText: { color: "#fff", fontWeight: "600", marginLeft: 6 },
 });

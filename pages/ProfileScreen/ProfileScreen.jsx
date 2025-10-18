@@ -4,20 +4,17 @@ import { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Avatar } from "react-native-paper";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../redux/auth/loginSlice";
 import { getProfile } from "../../redux/User/profile/getProfileSlice";
-
-const { height } = Dimensions.get("window");
 
 export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -40,17 +37,10 @@ export default function ProfileScreen({ navigation }) {
           try {
             await AsyncStorage.removeItem("accessToken");
             dispatch(logout());
-            Toast.show({
-              type: "success",
-              text1: "Đăng xuất thành công!",
-            });
+            Toast.show({ type: "success", text1: "Đăng xuất thành công!" });
             navigation.replace("SignIn");
           } catch (error) {
-            console.error("Logout error:", error);
-            Toast.show({
-              type: "error",
-              text1: "Đăng xuất thất bại!",
-            });
+            Toast.show({ type: "error", text1: "Đăng xuất thất bại!" });
           }
         },
       },
@@ -58,61 +48,42 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleTrackOrder = () => {
-    console.log("➡ ProfileScreen userId:", userId);
     navigation.navigate("TrackOrder", { userId });
   };
 
-  useEffect(() => {
-    console.log("ProfileScreen mounted. userId:", userId);
-    if (userId) {
-      dispatch(getProfile(userId));
-    }
-  }, [dispatch, userId]);
-
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.profileSection}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Image
+          source={{
+            uri: "https://static.vecteezy.com/system/resources/thumbnails/017/800/528/small_2x/user-simple-flat-icon-illustration-vector.jpg",
+          }}
+          style={styles.avatar}
+        />
+        <Text style={styles.name}>{profile?.fullName || "Người dùng"}</Text>
+        <Text style={styles.email}>{profile?.email}</Text>
+      </View>
+
+      {/* Thông tin */}
+      <View style={styles.infoCard}>
         {loading ? (
           <ActivityIndicator size="large" color="#8B4513" />
         ) : error ? (
           <Text style={styles.errorText}>Lỗi tải dữ liệu: {error}</Text>
         ) : profile && profile.id ? (
           <>
-            <View style={styles.avatarContainer}>
-              <Avatar.Icon
-                size={90}
-                icon="account"
-                color="#fff"
-                style={{ backgroundColor: "#D2B48C" }}
-              />
-              <Text style={styles.userName}>
-                {profile.fullName || "Người dùng"}
-              </Text>
-              <Text style={styles.userEmail}>{profile.email}</Text>
-            </View>
-
-            <View style={styles.infoBox}>
-              <Text style={styles.infoLabel}>ID:</Text>
-              <Text style={styles.infoValue}>{profile.id}</Text>
-
-              <Text style={styles.infoLabel}>Tên đăng nhập:</Text>
-              <Text style={styles.infoValue}>{profile.username}</Text>
-
-              <Text style={styles.infoLabel}>Số điện thoại:</Text>
-              <Text style={styles.infoValue}>
-                {profile.phoneNumber || "Chưa cập nhật"}
-              </Text>
-
-              <Text style={styles.infoLabel}>Trạng thái:</Text>
-              <Text
-                style={[
-                  styles.statusText,
-                  { color: profile.active ? "#4CAF50" : "#E53E3E" },
-                ]}
-              >
-                {profile.active ? "Hoạt động" : "Bị khóa"}
-              </Text>
-            </View>
+            <InfoItem label="Mã người dùng" value={profile.id} />
+            <InfoItem label="Tên đăng nhập" value={profile.username} />
+            <InfoItem
+              label="Số điện thoại"
+              value={profile.phoneNumber || "Chưa cập nhật"}
+            />
+            <InfoItem
+              label="Trạng thái"
+              value={profile.active ? "Hoạt động" : "Bị khóa"}
+              color={profile.active ? "#2E8B57" : "#E53E3E"}
+            />
           </>
         ) : (
           <Text style={styles.errorText}>
@@ -121,14 +92,14 @@ export default function ProfileScreen({ navigation }) {
         )}
       </View>
 
-      {/* 🔹 Nút Đăng xuất */}
-      <View style={styles.logoutContainer}>
-        <TouchableOpacity style={styles.trackButton} onPress={handleTrackOrder}>
+      {/* Nút hành động */}
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.trackBtn} onPress={handleTrackOrder}>
           <Text style={styles.trackText}>Theo dõi đơn hàng</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={20} color="#fff" />
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <LogOut size={18} color="#fff" />
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </View>
@@ -136,97 +107,109 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
+const InfoItem = ({ label, value, color = "#333" }) => (
+  <View style={styles.infoItem}>
+    <Text style={styles.label}>{label}</Text>
+    <Text style={[styles.value, { color }]}>{value}</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAF8F3",
+    backgroundColor: "#F8F9FB",
   },
-  profileSection: {
+  header: {
     alignItems: "center",
     paddingVertical: 40,
-    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    marginBottom: 10,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 2,
   },
-  avatarContainer: {
-    alignItems: "center",
-    marginBottom: 20,
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 12,
   },
-  userName: {
+  name: {
     fontSize: 22,
-    fontWeight: "bold",
-    color: "#5C3A21",
-    marginTop: 10,
+    fontWeight: "700",
+    color: "#2F2F2F",
   },
-  userEmail: {
-    fontSize: 15,
-    color: "#8B6914",
+  email: {
+    fontSize: 14,
+    color: "#888",
     marginTop: 4,
   },
-  infoBox: {
-    width: "90%",
-    backgroundColor: "#FFF9E5",
-    borderRadius: 12,
+  infoCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    borderRadius: 16,
     padding: 20,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  infoLabel: {
+  infoItem: {
+    borderBottomColor: "#eee",
+    borderBottomWidth: 1,
+    paddingVertical: 10,
+  },
+  label: {
     fontSize: 14,
-    color: "#8B6914",
+    color: "#888",
+  },
+  value: {
+    fontSize: 16,
     fontWeight: "600",
-    marginTop: 10,
+    marginTop: 2,
   },
-  infoValue: {
-    fontSize: 16,
-    color: "#3E2723",
-    fontWeight: "500",
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 5,
-  },
-  errorText: {
-    color: "#E53E3E",
-    textAlign: "center",
-    fontSize: 16,
-  },
-  logoutContainer: {
+  actions: {
     alignItems: "center",
-    marginTop: 30,
+    marginTop: 25,
     paddingBottom: 50,
   },
-  logoutButton: {
-    backgroundColor: "#E53E3E",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+  trackBtn: {
+    backgroundColor: "#FFB703",
     borderRadius: 12,
-    minWidth: 180,
-  },
-  logoutText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  trackButton: {
-    backgroundColor: "#8B4513",
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    width: "80%",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    minWidth: 180,
     marginBottom: 12,
   },
   trackText: {
     color: "#fff",
+    fontWeight: "700",
     fontSize: 16,
-    fontWeight: "600",
+  },
+  logoutBtn: {
+    backgroundColor: "#E63946",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    width: "80%",
+    gap: 6,
+  },
+  logoutText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  errorText: {
+    color: "#E53E3E",
+    textAlign: "center",
+    fontSize: 15,
   },
 });
