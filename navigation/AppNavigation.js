@@ -9,10 +9,16 @@ import SignInScreen from "../pages/LoginScreen/SignInScreen"; // Add this
 import SignUpScreen from "../pages/LoginScreen/SignUpScreen";
 import ProfileScreen from "../pages/ProfileScreen/ProfileScreen";
 import SearchScreen from "../pages/SearchScreen/SearchScreen";
+import CartScreen from "../pages/ShopScreen/Cart";
+import CheckoutScreen from "../pages/ShopScreen/Checkout";
 import ShopScreen from "../pages/ShopScreen/ShopScreen";
 
 // Custom TabBar
 import CustomTabBar from "../components/CustomTabBar/CustomTabBar";
+import AdminScreen from "../pages/AdminScreen/AdminScreen";
+import PaymentCancel from "../pages/ShopScreen/PaymentCancel";
+import PaymentSuccess from "../pages/ShopScreen/PaymentSuccess";
+import TrackOrdersScreen from "../pages/ShopScreen/TrackOrder";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -44,7 +50,12 @@ export default function AppNavigation() {
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="MainApp" component={MainTabNavigator} />
-        <Stack.Screen name="Admin" component={ProfileScreen} />
+        <Stack.Screen name="Admin" component={AdminScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
+        <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
+        <Stack.Screen name="PaymentCancel" component={PaymentCancel} />
+        <Stack.Screen name="TrackOrder" component={TrackOrdersScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

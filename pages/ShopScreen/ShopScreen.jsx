@@ -1,257 +1,208 @@
-import React, { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { useEffect } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
+  Image,
   ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
-import { Crown, Check } from "lucide-react-native";
+import Toast from "react-native-toast-message";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllProduct } from "../../redux/User/fetchAllProduct/getAllProductSlice";
+import { addToCart } from "../../redux/User/postProductToCart/postProductToCartSlice";
 import Header from "../../shared/header/Header";
 
-export default function PremiumScreen() {
-  const [selectedPlan, setSelectedPlan] = useState("yearly");
+export default function StoreScreen() {
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+  const { user } = useSelector((state) => state.auth);
+  const { product, loading, error } = useSelector(
+    (state) => state.fetchProduct
+  );
+
+  useEffect(() => {
+    dispatch(getAllProduct({ page: 1, size: 10 }));
+  }, [dispatch]);
+
+  const formatPrice = (price) => {
+    return price.toLocaleString("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    });
+  };
+
+  const handleAddToCart = (item) => {
+    if (!user) {
+      Toast.show({
+        type: "error",
+        text1: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng 🛒",
+      });
+      return;
+    }
+
+    dispatch(
+      addToCart({
+        productId: item.id,
+        quantity: 1,
+      })
+    );
+
+    Toast.show({
+      type: "success",
+      text1: "Đã thêm sản phẩm vào giỏ hàng 🎉",
+    });
+  };
+
+  const handleBuyNow = (item) => {
+    if (!user) {
+      Toast.show({
+        type: "error",
+        text1: "Vui lòng đăng nhập để mua sản phẩm 🛒",
+      });
+      return;
+    }
+
+    navigation.navigate("Checkout", { product: item });
+  };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Header />
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Crown size={32} color="#FFD700" />
-          <Text style={styles.title}>Nâng cấp Premium</Text>
-          <Text style={styles.subtitle}>
-            Trải nghiệm podcast không giới hạn
-          </Text>
-        </View>
 
-        <View style={styles.plansContainer}>
-          {/* Monthly Plan */}
-          <TouchableOpacity
-            style={[
-              styles.planCard,
-              selectedPlan === "monthly" && styles.selectedPlan,
-            ]}
-            onPress={() => setSelectedPlan("monthly")}
-          >
-            <View style={styles.planHeader}>
-              <Text style={styles.planName}>Premium Tháng</Text>
-              {selectedPlan === "monthly" && (
-                <Check size={20} color="#8B4513" />
-              )}
-            </View>
-            <Text style={styles.planPrice}>
-              49,000đ<Text style={styles.planPeriod}>/tháng</Text>
-            </Text>
-            <View style={styles.planFeatures}>
-              <Text style={styles.feature}>✓ Nghe không quảng cáo</Text>
-              <Text style={styles.feature}>✓ Tải xuống không giới hạn</Text>
-              <Text style={styles.feature}>✓ Chất lượng âm thanh cao</Text>
-              <Text style={styles.feature}>✓ Nghe offline mọi lúc</Text>
-            </View>
-          </TouchableOpacity>
+      <Text style={styles.title}>Cửa hàng vòng tay</Text>
 
-          {/* Yearly Plan - Popular */}
-          <TouchableOpacity
-            style={[
-              styles.planCard,
-              styles.popularPlan,
-              selectedPlan === "yearly" && styles.selectedPlan,
-            ]}
-            onPress={() => setSelectedPlan("yearly")}
-          >
-            <View style={styles.popularBadge}>
-              <Text style={styles.popularText}>Tiết kiệm nhất</Text>
-            </View>
-            <View style={styles.planHeader}>
-              <Text style={styles.planName}>Premium Năm</Text>
-              {selectedPlan === "yearly" && <Check size={20} color="#8B4513" />}
-            </View>
-            <Text style={styles.planPrice}>
-              399,000đ<Text style={styles.planPeriod}>/năm</Text>
-            </Text>
-            <Text style={styles.savings}>Tiết kiệm 32% so với gói tháng</Text>
-            <View style={styles.planFeatures}>
-              <Text style={styles.feature}>✓ Nghe không quảng cáo</Text>
-              <Text style={styles.feature}>✓ Tải xuống không giới hạn</Text>
-              <Text style={styles.feature}>✓ Chất lượng âm thanh cao</Text>
-              <Text style={styles.feature}>✓ Nghe offline mọi lúc</Text>
-              <Text style={styles.feature}>✓ Ưu tiên hỗ trợ khách hàng</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+      {loading && <ActivityIndicator size="large" color="#f59e0b" />}
+      {error && <Text style={styles.errorText}>Lỗi: {error}</Text>}
 
-        <TouchableOpacity style={styles.subscribeButton}>
-          <Text style={styles.subscribeText}>
-            Đăng ký {selectedPlan === "monthly" ? "gói tháng" : "gói năm"}
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.grid}>
+        {product?.map((item) => (
+          <View key={item.id} style={styles.card}>
+            <View>
+              {" "}
+              {/* ✅ gói phần trên lại */}
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+              <Text style={styles.productName}>{item.name}</Text>
+              <Text style={styles.priceText}>{formatPrice(item.price)}</Text>
+            </View>
 
-        <View style={styles.benefits}>
-          <Text style={styles.benefitsTitle}>Lợi ích Premium</Text>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>🎧</Text>
-            <Text style={styles.benefitText}>
-              Nghe không quảng cáo, tập trung hoàn toàn vào nội dung
-            </Text>
+            {/* nút nằm dưới cùng card */}
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                onPress={() => handleAddToCart(item)}
+                style={[styles.button, styles.addButton]}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.buttonText}>Thêm vào giỏ</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => handleBuyNow(item)}
+                style={[styles.button, styles.buyButton]}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.buttonText}>Mua ngay</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>📱</Text>
-            <Text style={styles.benefitText}>
-              Tải xuống và nghe offline, không cần kết nối internet
-            </Text>
-          </View>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>🔊</Text>
-            <Text style={styles.benefitText}>
-              Chất lượng âm thanh cao, trải nghiệm nghe tuyệt vời
-            </Text>
-          </View>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>⭐</Text>
-            <Text style={styles.benefitText}>
-              Truy cập nội dung Premium độc quyền
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-    </View>
+        ))}
+      </View>
+
+      <Toast />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAF8F3",
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
   },
-  content: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 60,
+  cartButtonContainer: {
+    alignItems: "flex-end",
+    marginVertical: 16,
   },
-  header: {
+  cartButton: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 30,
+    backgroundColor: "#f59e0b",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  cartButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#8B4513",
-    marginTop: 10,
-    textAlign: "center",
+    color: "#1e293b",
+    marginBottom: 12,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#8B6914",
-    marginTop: 5,
-    textAlign: "center",
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
-  plansContainer: {
-    marginBottom: 30,
-  },
-  planCard: {
-    backgroundColor: "#F0E6D2",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
-    borderWidth: 2,
-    borderColor: "#D2B48C",
-    position: "relative",
-  },
-  selectedPlan: {
-    borderColor: "#8B4513",
-    backgroundColor: "#EDE0CC",
-  },
-  popularPlan: {
-    borderColor: "#8B4513",
-  },
-  popularBadge: {
-    position: "absolute",
-    top: -10,
-    left: 20,
-    backgroundColor: "#8B4513",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+  card: {
+    width: "48%",
+    backgroundColor: "#fef3c7",
     borderRadius: 12,
+    padding: 10,
+    marginBottom: 16,
+    elevation: 3,
+    minHeight: 260,
+    flexDirection: "column",
+    justifyContent: "space-between", // ✅ đẩy nút xuống cuối
   },
-  popularText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+
+  image: {
+    width: "100%",
+    height: 120,
+    borderRadius: 8,
+    marginBottom: 8,
   },
-  planHeader: {
+  productName: {
+    fontWeight: "600",
+    color: "#1e293b",
+    fontSize: 16,
+  },
+  priceText: {
+    color: "#475569",
+    marginBottom: 8,
+  },
+  buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+    gap: 6,
   },
-  planName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#8B4513",
-  },
-  planPrice: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#8B4513",
-    marginBottom: 5,
-  },
-  planPeriod: {
-    fontSize: 16,
-    fontWeight: "normal",
-  },
-  savings: {
-    color: "#228B22",
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
-  planFeatures: {
-    marginTop: 15,
-  },
-  feature: {
-    fontSize: 14,
-    color: "#6B4423",
-    marginBottom: 8,
-    paddingLeft: 5,
-  },
-  subscribeButton: {
-    backgroundColor: "#8B4513",
-    paddingVertical: 18,
-    borderRadius: 12,
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  subscribeText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  benefits: {
-    marginBottom: 20,
-  },
-  benefitsTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#8B4513",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  benefitItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-    backgroundColor: "#F0E6D2",
-    padding: 15,
-    borderRadius: 12,
-  },
-  benefitIcon: {
-    fontSize: 24,
-    marginRight: 15,
-  },
-  benefitText: {
+  button: {
     flex: 1,
-    fontSize: 14,
-    color: "#6B4423",
-    lineHeight: 20,
+    borderRadius: 8,
+    paddingVertical: 6,
+    alignItems: "center",
+  },
+  addButton: {
+    backgroundColor: "#f59e0b",
+  },
+  buyButton: {
+    backgroundColor: "#6366f1",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 10,
   },
 });
