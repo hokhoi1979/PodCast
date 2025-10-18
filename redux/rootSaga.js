@@ -10,6 +10,7 @@ import watchUpdateProductSaga from "./Admin/Product/update_Product/updateProduct
 import watchLogin from "./auth/loginSaga";
 import watchRegister from "./auth/registerSaga";
 import watchPostChatSaga from "./ChatAI/chatAiSaga";
+import watchPostFlashCard from "./Flashcard/flashCardSaga";
 import watchGetComments from "./User/comment/fetch_comment/fetchCommentSaga";
 import watchPostComment from "./User/comment/post_comment/postCommentSaga";
 import watchDeleteFavoriteSaga from "./User/favourite/deleteFavorite/deleteFavoriteSaga";
@@ -19,8 +20,8 @@ import watchGetAllPodcastSaga from "./User/fetchAllPodcast/getAllPodcastSaga";
 import watchFetchCategorySaga from "./User/fetchCategory/fetchCategorySaga";
 import watchFetchPodcastByCateSaga from "./User/fetchPodcastByCate/fetchPodcastByCateSaga";
 import watchPostLetter from "./User/letter/postLetterSaga";
-import watchGetAllUserSaga from "./User/manageUser/getAllUser/getAllUserSaga";
 import watchBanUserSaga from "./User/manageUser/banUser/banUserSaga";
+import watchGetAllUserSaga from "./User/manageUser/getAllUser/getAllUserSaga";
 import watchUnBanUserSaga from "./User/manageUser/unBanUser/unBanUserSaga";
 
 export default function* rootSaga() {
@@ -55,5 +56,6 @@ export default function* rootSaga() {
     watchPostComment(),
     watchPostLetter(),
     watchPostChatSaga(),
+    watchPostFlashCard(),
   ]);
 }

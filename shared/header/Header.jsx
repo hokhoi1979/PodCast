@@ -31,6 +31,9 @@ export default function Header() {
         <TouchableOpacity onPress={() => navigation.navigate("Letter")}>
           <Ionicons name="mail-outline" size={24} color="#604B3B" />
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("FlashCard")}>
+          <Ionicons name="albums-outline" size={24} color="#604B3B" />
+        </TouchableOpacity>
       </View>
     </View>
   );
