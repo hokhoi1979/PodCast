@@ -20,7 +20,6 @@ function* getAllPodcastSaga(action) {
         size: action.payload?.size || 10, // Default to size 10 if not provided
       },
     });
-    console.log("Fetch All Podcast response:", response.data);
     yield put(fetchAllPodcastSuccess(response.data));
   } catch (error) {
     let errorMessage = "Fetch all podcasts failed!";

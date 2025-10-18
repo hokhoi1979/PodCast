@@ -5,10 +5,9 @@ import { createStackNavigator } from "@react-navigation/stack";
 // Pages
 import FavouriteScreen from "../pages/FavouriteScreen/FavouriteScreen";
 import HomeScreen from "../pages/HomeScreen/HomeScreen";
-import SignInScreen from "../pages/LoginScreen/SignInScreen"; // Add this
+import SignInScreen from "../pages/LoginScreen/SignInScreen";
 import SignUpScreen from "../pages/LoginScreen/SignUpScreen";
 import ProfileScreen from "../pages/ProfileScreen/ProfileScreen";
-import SearchScreen from "../pages/SearchScreen/SearchScreen";
 import CartScreen from "../pages/ShopScreen/Cart";
 import CheckoutScreen from "../pages/ShopScreen/Checkout";
 import ShopScreen from "../pages/ShopScreen/ShopScreen";
@@ -16,6 +15,13 @@ import ShopScreen from "../pages/ShopScreen/ShopScreen";
 // Custom TabBar
 import CustomTabBar from "../components/CustomTabBar/CustomTabBar";
 import AdminScreen from "../pages/AdminScreen/AdminScreen";
+import CategoryManagementScreen from "../pages/AdminScreen/CategoryManagementScreen";
+import PodcastManagementScreen from "../pages/AdminScreen/PodcastManagementScreen";
+import ProductManagementScreen from "../pages/AdminScreen/ProductManagementScreen";
+import UserManagementScreen from "../pages/AdminScreen/UserManagementScreen";
+import ChatwithAIScreen from "../pages/ChatwithAI/ChatwitAIScreen";
+import FlashcardNative from "../pages/FlashCard/FlashCard";
+import LetterScreen from "../pages/Letter/LetterScreen";
 import PaymentCancel from "../pages/ShopScreen/PaymentCancel";
 import PaymentSuccess from "../pages/ShopScreen/PaymentSuccess";
 import TrackOrdersScreen from "../pages/ShopScreen/TrackOrder";
@@ -29,8 +35,9 @@ function MainTabNavigator() {
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
+      initialRouteName="Home"
     >
-      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Chat" component={ChatwithAIScreen} />
       <Tab.Screen name="Favourite" component={FavouriteScreen} />
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Shop" component={ShopScreen} />
@@ -45,7 +52,7 @@ export default function AppNavigation() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="SignIn" // Start with SignIn
+        initialRouteName="SignIn"
       >
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
@@ -56,6 +63,29 @@ export default function AppNavigation() {
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
         <Stack.Screen name="PaymentCancel" component={PaymentCancel} />
         <Stack.Screen name="TrackOrder" component={TrackOrdersScreen} />
+        <Stack.Screen
+          name="CategoryManagement"
+          component={CategoryManagementScreen}
+        />
+        <Stack.Screen
+          name="ProductManagement"
+          component={ProductManagementScreen}
+        />
+        <Stack.Screen
+          name="PodcastManagement"
+          component={PodcastManagementScreen}
+        />
+        <Stack.Screen name="UserManagement" component={UserManagementScreen} />
+        <Stack.Screen
+          name="Letter"
+          component={LetterScreen}
+          options={{ title: "Gửi Thư" }}
+        />
+        <Stack.Screen
+          name="FlashCard"
+          component={FlashcardNative}
+          options={{ title: "FlashCard" }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

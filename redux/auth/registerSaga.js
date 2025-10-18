@@ -13,8 +13,6 @@ export function* RegisterSaga(action) {
 
     const response = yield call(api.post, "/api/auth/register", action.payload);
 
-    console.log("Register response:", response.data);
-
     yield put(registerSuccess());
 
     Toast.show({
@@ -27,7 +25,7 @@ export function* RegisterSaga(action) {
       yield call(action.onSuccess);
     }
   } catch (error) {
-    console.error("Register error:", {
+    Toast.show("Register error:", {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,

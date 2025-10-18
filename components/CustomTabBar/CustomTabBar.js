@@ -29,14 +29,15 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
         };
 
         let icon;
-        if (route.name === "Search")
+        if (route.name === "Chat")
           icon = (
             <Ionicons
-              name="search"
+              name={isFocused ? "chatbubble" : "chatbubble-outline"}
               size={24}
               color={isFocused ? "#946f4a" : "#9a9a9a"}
             />
           );
+
         if (route.name === "Favourite")
           icon = (
             <Ionicons
