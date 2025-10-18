@@ -43,6 +43,7 @@ export default function HomeScreen() {
   const [duration, setDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRef = useRef(null);
 
   // Comment Modal States
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -300,6 +301,7 @@ export default function HomeScreen() {
   return (
     <>
       <ScrollView
+        ref={scrollRef}
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -490,6 +492,7 @@ export default function HomeScreen() {
                   onPress={() => {
                     setDescExpanded(false);
                     dispatch(selectPodcast(ep, true));
+                    scrollRef.current?.scrollTo({ y: 0, animated: true });
                   }}
                   activeOpacity={0.7}
                 >
