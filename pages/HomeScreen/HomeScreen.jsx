@@ -1,13 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { Audio } from "expo-av";
 import { Image } from "expo-image";
-import { Heart, MessageCircle, Pause, Play } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import { Heart, Pause, Play, Volume2, VolumeX } from "lucide-react-native";
+import { useEffect, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,12 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
 
-import { getComments } from "../../redux/User/comment/fetch_comment/fetchCommentSlice.js";
-import { postComment } from "../../redux/User/comment/post_comment/postCommentSilce.js";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { deleteFavorite } from "../../redux/User/favourite/deleteFavorite/deleteFavoriteSlice.js";
 import { getFavorite } from "../../redux/User/favourite/getFavorite/getFavoriteSlice.js";
 import { postFavorite } from "../../redux/User/favourite/postFavortie/postFavoriteSlice.js";
@@ -37,16 +31,12 @@ export default function HomeScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const soundRef = useRef(null);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState([]);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isSeeking, setIsSeeking] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Comment Modal States
-  const [showCommentModal, setShowCommentModal] = useState(false);
-  const [commentText, setCommentText] = useState("");
+  const prevVolumeRef = useRef(1);
 
   const dispatch = useDispatch();
   const { podcasts, loading, selectedPodcast, autoPlay } = useSelector(
@@ -58,11 +48,8 @@ export default function HomeScreen() {
   const { podcastsByCate, loading: podcastsByCateLoading } = useSelector(
     (state) => state.fetchPodcastByCate
   );
+
   const { getFavo = [] } = useSelector((state) => state.getFavorite);
-  const { comments, loading: commentsLoading } = useSelector(
-    (state) => state.getComments
-  );
-  const { success: commentSuccess } = useSelector((state) => state.postComment);
 
   const apiCategories = categories?.map((cat) => cat.name) || [];
   const sortedCategories = ["All", ...apiCategories];
@@ -79,54 +66,13 @@ export default function HomeScreen() {
         )
       : displayPodcasts;
 
-  console.log("DUC", podcasts);
-
-  // Fetch comments khi mở modal
-  useEffect(() => {
-    if (showCommentModal && selectedPodcast?.id) {
-      dispatch(getComments(selectedPodcast.id));
-    }
-  }, [showCommentModal, selectedPodcast?.id]);
-
-  // Reset comment form khi thành công
-  useEffect(() => {
-    if (commentSuccess) {
-      setCommentText("");
-      if (selectedPodcast?.id) {
-        dispatch(getComments(selectedPodcast.id));
-      }
-    }
-  }, [commentSuccess]);
-
-  useEffect(() => {
-    if (selectedPodcast && filtered) {
-      const index = filtered.findIndex((p) => p.id === selectedPodcast.id);
-      if (index >= 0) setCurrentIndex(index);
-    }
-  }, [selectedPodcast, filtered]);
-
-  const playNext = () => {
-    if (!filtered || filtered.length === 0) return;
-    const nextIndex = (currentIndex + 1) % filtered.length;
-    dispatch(selectPodcast(filtered[nextIndex], true));
-    setDescExpanded(false);
-  };
-
-  const playPrevious = () => {
-    if (!filtered || filtered.length === 0) return;
-    const prevIndex =
-      currentIndex === 0 ? filtered.length - 1 : currentIndex - 1;
-    dispatch(selectPodcast(filtered[prevIndex], true));
-    setDescExpanded(false);
-  };
-
   useEffect(() => {
     dispatch(getFavorite());
   }, [dispatch]);
 
   useEffect(() => {
     if (getFavo?.content) {
-      const favIds = getFavo.content.map((item) => item.podcastId);
+      const favIds = getFavo.content.map((item) => item.podcast?.id);
       setFavorites(favIds);
     }
   }, [getFavo]);
@@ -153,8 +99,6 @@ export default function HomeScreen() {
             soundRef.current = null;
           }
           setIsPlaying(false);
-          setPosition(0);
-          setDuration(0);
           return;
         }
 
@@ -182,17 +126,8 @@ export default function HomeScreen() {
           { uri },
           { shouldPlay: autoPlay },
           (status) => {
-            if (status.isLoaded) {
-              if (!isSeeking) {
-                setPosition(status.positionMillis || 0);
-              }
-              setDuration(status.durationMillis || 0);
-
-              if (status.didJustFinish) {
-                setIsPlaying(false);
-                setPosition(0);
-                playNext();
-              }
+            if (status.isLoaded && status.didJustFinish) {
+              setIsPlaying(false);
             }
           }
         );
@@ -203,7 +138,7 @@ export default function HomeScreen() {
         }
 
         soundRef.current = sound;
-        await sound.setVolumeAsync(1);
+        await sound.setVolumeAsync(volume);
         setIsPlaying(!!autoPlay);
       } catch (e) {
         setIsPlaying(false);
@@ -215,6 +150,12 @@ export default function HomeScreen() {
       mounted = false;
     };
   }, [selectedPodcast, autoPlay]);
+
+  useEffect(() => {
+    if (soundRef.current) {
+      soundRef.current.setVolumeAsync(volume).catch(() => {});
+    }
+  }, [volume]);
 
   useEffect(() => {
     return () => {
@@ -241,28 +182,34 @@ export default function HomeScreen() {
     } catch (e) {}
   };
 
-  const handleSeekStart = () => {
-    setIsSeeking(true);
+  const handleVolumeChange = (v) => {
+    const val = Array.isArray(v) ? v[0] : v;
+    setVolume(val);
+    setMuted(val === 0);
   };
 
-  const handleSeekChange = (value) => {
-    setPosition(value);
-  };
-
-  const handleSeekComplete = async (value) => {
-    setIsSeeking(false);
+  const commitVolume = async (v) => {
+    const val = Array.isArray(v) ? v[0] : v;
     if (soundRef.current) {
-      try {
-        await soundRef.current.setPositionAsync(value);
-      } catch (e) {}
+      await soundRef.current.setVolumeAsync(val);
     }
+    setMuted(val === 0);
   };
 
-  const formatTime = (ms) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  const toggleMute = async () => {
+    const sound = soundRef.current;
+    if (!sound) return;
+    if (!muted) {
+      prevVolumeRef.current = volume || 0.5;
+      await sound.setVolumeAsync(0);
+      setVolume(0);
+      setMuted(true);
+    } else {
+      const newVol = prevVolumeRef.current || 1;
+      await sound.setVolumeAsync(newVol);
+      setVolume(newVol);
+      setMuted(false);
+    }
   };
 
   const handleCategoryPress = (category) => {
@@ -280,23 +227,6 @@ export default function HomeScreen() {
     }
   };
 
-  const handleSubmitComment = () => {
-    if (!commentText.trim()) {
-      Toast.show({ type: "error", text1: "Vui lòng nhập bình luận" });
-      return;
-    }
-    if (!selectedPodcast?.id) {
-      Toast.show({ type: "error", text1: "Không tìm thấy podcast" });
-      return;
-    }
-    dispatch(
-      postComment({
-        podcastId: selectedPodcast.id,
-        content: commentText.trim(),
-      })
-    );
-  };
-
   return (
     <>
       <ScrollView
@@ -306,6 +236,86 @@ export default function HomeScreen() {
       >
         <SafeAreaView>
           <Header />
+
+          <View style={styles.featured}>
+            <Image
+              style={styles.featuredImage}
+              source={{
+                uri:
+                  selectedPodcast?.imageUrl ||
+                  "https://images.pexels.com/photos/3807755/pexels-photo-3807755.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop",
+              }}
+            />
+            <View style={styles.featuredInfo}>
+              <Text style={styles.featuredTitle} numberOfLines={2}>
+                {selectedPodcast?.title || "Chọn podcast để nghe"}
+              </Text>
+              {!!selectedPodcast?.description && (
+                <>
+                  <Text
+                    style={styles.featuredDesc}
+                    numberOfLines={descExpanded ? undefined : 2}
+                  >
+                    {selectedPodcast.description}
+                  </Text>
+                  {selectedPodcast.description.length > 100 && (
+                    <TouchableOpacity
+                      onPress={() => setDescExpanded((v) => !v)}
+                    >
+                      <Text style={styles.expandText}>
+                        {descExpanded ? "Thu gọn" : "Xem thêm"}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+              <TouchableOpacity
+                style={styles.playButton}
+                onPress={handlePlayPause}
+                disabled={!selectedPodcast}
+              >
+                {isPlaying ? (
+                  <Pause size={16} color="#fff" fill="#fff" />
+                ) : (
+                  <Play size={16} color="#fff" fill="#fff" />
+                )}
+                <Text style={styles.playButtonText}>
+                  {isPlaying ? "Đang phát" : "Phát"}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.volumeRow}>
+                <TouchableOpacity
+                  style={styles.volumeIconBtn}
+                  onPress={toggleMute}
+                  disabled={!selectedPodcast}
+                >
+                  {muted || volume === 0 ? (
+                    <VolumeX size={18} color="#20B2AA" />
+                  ) : (
+                    <Volume2 size={18} color="#20B2AA" />
+                  )}
+                </TouchableOpacity>
+                <Slider
+                  style={styles.volumeSlider}
+                  minimumValue={0}
+                  maximumValue={1}
+                  step={0.01}
+                  value={volume}
+                  minimumTrackTintColor="#20B2AA"
+                  maximumTrackTintColor="#E0E0E0"
+                  thumbTintColor="#20B2AA"
+                  onValueChange={handleVolumeChange}
+                  onSlidingComplete={commitVolume}
+                  disabled={!selectedPodcast}
+                />
+                <Text style={styles.volumeLabel}>
+                  {Math.round(volume * 100)}%
+                </Text>
+              </View>
+            </View>
+          </View>
+
           <View style={{ padding: 10 }}>
             <View style={styles.searchBox}>
               <Ionicons
@@ -328,114 +338,6 @@ export default function HomeScreen() {
             )}
           </View>
 
-          <View style={styles.featured}>
-            <Image
-              style={styles.featuredImage}
-              source={{
-                uri:
-                  selectedPodcast?.imageUrl ||
-                  "https://images.pexels.com/photos/3807755/pexels-photo-3807755.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop",
-              }}
-            />
-
-            <View style={styles.featuredContent}>
-              <Text style={styles.featuredTitle} numberOfLines={2}>
-                {selectedPodcast?.title || "Chọn podcast để nghe"}
-              </Text>
-
-              {!!selectedPodcast?.description && (
-                <>
-                  <Text
-                    style={styles.featuredDesc}
-                    numberOfLines={descExpanded ? undefined : 3}
-                  >
-                    {selectedPodcast.description}
-                  </Text>
-                  {selectedPodcast.description.length > 100 && (
-                    <TouchableOpacity
-                      onPress={() => setDescExpanded((v) => !v)}
-                    >
-                      <Text style={styles.expandText}>
-                        {descExpanded ? "Thu gọn" : "Xem thêm"}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              )}
-
-              {selectedPodcast && (
-                <View style={styles.playerContainer}>
-                  {duration > 0 && (
-                    <View style={styles.seekWrapper}>
-                      <Text style={styles.timeText}>
-                        {formatTime(position)}
-                      </Text>
-                      <Slider
-                        style={styles.seekSlider}
-                        minimumValue={0}
-                        maximumValue={duration}
-                        value={position}
-                        onSlidingStart={handleSeekStart}
-                        onValueChange={handleSeekChange}
-                        onSlidingComplete={handleSeekComplete}
-                        minimumTrackTintColor="#FF6B35"
-                        maximumTrackTintColor="#E0E0E0"
-                        thumbTintColor="#FF6B35"
-                      />
-                      <Text style={styles.timeText}>
-                        {formatTime(duration)}
-                      </Text>
-                    </View>
-                  )}
-
-                  <View style={styles.controlsRow}>
-                    <TouchableOpacity
-                      style={styles.controlButton}
-                      onPress={playPrevious}
-                    >
-                      <Ionicons name="play-skip-back" size={24} color="#666" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.playButtonLarge}
-                      onPress={handlePlayPause}
-                      disabled={!selectedPodcast}
-                    >
-                      {isPlaying ? (
-                        <Pause size={28} color="#fff" fill="#fff" />
-                      ) : (
-                        <Play size={28} color="#fff" fill="#fff" />
-                      )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.controlButton}
-                      onPress={playNext}
-                    >
-                      <Ionicons
-                        name="play-skip-forward"
-                        size={24}
-                        color="#666"
-                      />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* COMMENT BUTTON */}
-                  <View style={styles.actionRow}>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => setShowCommentModal(true)}
-                    >
-                      <MessageCircle size={20} color="#946f4a" />
-                      <Text style={styles.actionText}>Bình luận</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* CATEGORIES */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -471,7 +373,6 @@ export default function HomeScreen() {
             )}
           </ScrollView>
 
-          {/* PODCAST LIST */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               {selectedCategory === "All"
@@ -532,61 +433,6 @@ export default function HomeScreen() {
           </View>
         </SafeAreaView>
       </ScrollView>
-
-      {/* COMMENT MODAL */}
-      <Modal
-        visible={showCommentModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCommentModal(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Bình luận</Text>
-              <TouchableOpacity onPress={() => setShowCommentModal(false)}>
-                <Ionicons name="close" size={28} color="#333" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.commentList}>
-              {commentsLoading ? (
-                <Text style={styles.loadingText}>Đang tải...</Text>
-              ) : comments?.length > 0 ? (
-                comments.map((comment, index) => (
-                  <View key={index} style={styles.commentItem}>
-                    <Text style={styles.commentUser}>
-                      {comment.user?.username || "Ẩn danh"}
-                    </Text>
-                    <Text style={styles.commentContent}>{comment.content}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyText}>Chưa có bình luận nào</Text>
-              )}
-            </ScrollView>
-
-            <View style={styles.commentInputWrapper}>
-              <TextInput
-                style={styles.commentInput}
-                placeholder="Viết bình luận..."
-                value={commentText}
-                onChangeText={setCommentText}
-                multiline
-              />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={handleSubmitComment}
-              >
-                <Ionicons name="send" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </>
   );
 }
@@ -594,184 +440,70 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F0" },
   contentContainer: { paddingBottom: 100 },
-
   featured: {
+    flexDirection: "row",
     backgroundColor: "#FFF",
     margin: 16,
-    borderRadius: 20,
+    padding: 16,
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 5,
-    overflow: "hidden",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   featuredImage: {
-    width: "100%",
-    height: 280,
+    width: 90,
+    height: 90,
+    borderRadius: 12,
+    marginRight: 14,
     backgroundColor: "#E0E0E0",
   },
-  featuredContent: {
-    padding: 20,
-  },
+  featuredInfo: { flex: 1, justifyContent: "center" },
   featuredTitle: {
-    fontSize: 22,
+    fontSize: 17,
     fontWeight: "700",
     color: "#1A1A1A",
-    marginBottom: 4,
-    lineHeight: 28,
-  },
-  featuredDesc: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
     marginBottom: 6,
   },
+  featuredDesc: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 18,
+    marginBottom: 4,
+  },
   expandText: {
-    color: "#946f4a",
+    color: "#20B2AA",
     fontSize: 13,
     fontWeight: "600",
     marginTop: 2,
-    marginBottom: 12,
   },
-
-  playerContainer: {
-    marginTop: 16,
-  },
-  seekWrapper: {
+  playButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
-  },
-  seekSlider: {
-    flex: 1,
-    marginHorizontal: 12,
-    height: 30,
-  },
-  timeText: {
-    fontSize: 12,
-    color: "#666",
-    fontWeight: "600",
-    width: 40,
-    textAlign: "center",
-  },
-  controlsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 40,
-  },
-  controlButton: {
-    width: 50,
-    height: 50,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  playButtonLarge: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "#946f4a",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#946f4a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 20,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F5F5F0",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 8,
-  },
-  actionText: {
-    color: "#946f4a",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContainer: {
-    backgroundColor: "#FFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "80%",
-    paddingBottom: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1A1A1A",
-  },
-
-  commentList: {
-    maxHeight: 300,
-    paddingHorizontal: 20,
-  },
-  commentItem: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  commentUser: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#946f4a",
-    marginBottom: 4,
-  },
-  commentContent: {
-    fontSize: 14,
-    color: "#333",
-    lineHeight: 20,
-  },
-  commentInputWrapper: {
-    flexDirection: "row",
-    padding: 20,
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-  },
-  commentInput: {
-    flex: 1,
-    backgroundColor: "#F5F5F0",
-    borderRadius: 20,
+    backgroundColor: "#20B2AA",
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    borderRadius: 24,
+    alignSelf: "flex-center",
+    marginTop: 8,
+  },
+  playButtonText: {
+    color: "#fff",
+    marginLeft: 6,
+    fontWeight: "600",
     fontSize: 14,
-    maxHeight: 100,
   },
-  sendButton: {
-    backgroundColor: "#946f4a",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+  volumeRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  volumeIconBtn: { padding: 6 },
+  volumeSlider: { flex: 1, marginHorizontal: 10, height: 30 },
+  volumeLabel: {
+    width: 42,
+    textAlign: "right",
+    fontSize: 12,
+    color: "#333",
+    fontWeight: "600",
   },
-
   categoryScroll: { marginVertical: 8 },
   categoryContent: { paddingHorizontal: 16, paddingVertical: 4 },
   categoryItem: {
@@ -783,10 +515,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
-  categoryItemActive: { backgroundColor: "#946f4a", borderColor: "#946f4a" },
+  categoryItemActive: { backgroundColor: "#20B2AA", borderColor: "#20B2AA" },
   categoryText: { color: "#666", fontSize: 14, fontWeight: "500" },
   categoryTextActive: { color: "#fff", fontWeight: "600" },
-
   section: { paddingHorizontal: 16, marginTop: 8 },
   sectionTitle: {
     fontSize: 20,
@@ -823,7 +554,7 @@ const styles = StyleSheet.create({
   },
   heartButton: { padding: 8 },
   loadingContainer: { paddingVertical: 40, alignItems: "center" },
-  loadingText: { fontSize: 15, color: "#999", textAlign: "center" },
+  loadingText: { fontSize: 15, color: "#999" },
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -831,12 +562,13 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     paddingHorizontal: 10,
+    marginBottom: 16,
     height: 45,
   },
   input: { flex: 1, fontSize: 16 },
   resultText: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
   emptyContainer: { paddingVertical: 60, alignItems: "center" },
-  emptyText: { fontSize: 15, color: "#999", textAlign: "center" },
+  emptyText: { fontSize: 15, color: "#999" },
   categoryLoadingContainer: { paddingHorizontal: 16, paddingVertical: 8 },
   categoryLoadingText: { fontSize: 14, color: "#999" },
 });
