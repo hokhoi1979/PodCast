@@ -81,14 +81,14 @@ export default function StoreScreen() {
         {product?.map((item) => (
           <View key={item.id} style={styles.card}>
             <View>
-              {" "}
-              {/* ✅ gói phần trên lại */}
               <Image
                 source={{ uri: item.imageUrl }}
                 style={styles.image}
                 resizeMode="cover"
               />
-              <Text style={styles.productName}>{item.name}</Text>
+              <Text style={styles.productName} numberOfLines={1}>
+                {item.name}
+              </Text>
               <Text style={styles.priceText}>{formatPrice(item.price)}</Text>
             </View>
 
@@ -170,6 +170,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
   },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
   productName: {
     fontWeight: "600",
     color: "#1e293b",

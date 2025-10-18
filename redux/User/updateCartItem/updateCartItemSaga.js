@@ -41,7 +41,7 @@ function* updateCartItemSaga(action) {
     yield put(updateCartItemFail(error.message));
     Toast.show({
       type: "error",
-      text: error.message,
+      text1: error.message,
     });
   }
 }
