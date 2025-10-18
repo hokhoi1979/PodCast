@@ -19,6 +19,7 @@ import {
   createPayosRequest,
   resetPayos,
 } from "../../redux/User/payos/createPayosSlice";
+import { getProfile } from "../../redux/User/profile/getProfileSlice";
 
 export default function CheckoutScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -30,6 +31,7 @@ export default function CheckoutScreen({ navigation }) {
   const { orderItem, loading: itemLoading } = useSelector(
     (state) => state.orderItem
   );
+  const userId = useSelector((state) => state.auth?.user?.id);
   const { profile } = useSelector((state) => state.getProfile);
   const { payosUrl, loading: payosLoading } = useSelector(
     (state) => state.createPayos
@@ -52,6 +54,12 @@ export default function CheckoutScreen({ navigation }) {
       setShowWebView(true);
     }
   }, [payosUrl]);
+
+  useEffect(() => {
+    if (userId && !profile) {
+      dispatch(getProfile(userId));
+    }
+  }, [userId, dispatch]);
 
   // Xử lý điều hướng trong WebView
   const handleWebViewNavigation = (event) => {
@@ -168,11 +176,8 @@ export default function CheckoutScreen({ navigation }) {
               <Text style={styles.totalText}>
                 Tạm tính: {formatPrice(totalAmount)}
               </Text>
-              <Text style={styles.totalText}>
-                Phí vận chuyển: {formatPrice(15000)}
-              </Text>
               <Text style={styles.totalAmount}>
-                Tổng cộng: {formatPrice(totalAmount + 15000)}
+                Tổng cộng: {formatPrice(totalAmount)}
               </Text>
             </View>
 

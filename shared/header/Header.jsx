@@ -27,7 +27,7 @@ export default function Header() {
         <TouchableOpacity onPress={() => navigation.navigate("Search")}>
           <EvilIcons name="search" size={24} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Shop")}>
+        <TouchableOpacity onPress={() => navigation.navigate("Cart")}>
           <AntDesign name="shopping-cart" size={24} color="#604B3B" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Letter")}>
