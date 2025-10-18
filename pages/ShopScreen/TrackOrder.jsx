@@ -26,7 +26,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getOrderUser } from "../../redux/User/fetchOrderByUser/getAllOrderByUserSlice";
 import { updateStatusOrder } from "../../redux/User/updateStatusOrder/updateStatusOrderSlice";
 
-export default function TrackOrdersScreen({ route }) {
+export default function TrackOrdersScreen({ route, navigation }) {
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const { orderUser, loading, error } = useSelector((state) => state.orderUser);
@@ -97,6 +97,7 @@ export default function TrackOrdersScreen({ route }) {
     await dispatch(
       updateStatusOrder({ id: orderId, status: "RECEIVED", userId })
     );
+    console("id", orderId);
     dispatch(getOrderUser({ userId, page: 1, size: 40 }));
     Alert.alert("✅ Thành công", "Đơn hàng đã được xác nhận là đã nhận hàng.");
   };
@@ -143,6 +144,23 @@ export default function TrackOrdersScreen({ route }) {
         />
       }
     >
+      {/* 🔹 Nút quay lại trang chính */}
+      <View style={{ alignItems: "center", marginTop: 20, marginBottom: 40 }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#f59e0b",
+            paddingVertical: 12,
+            paddingHorizontal: 30,
+            borderRadius: 8,
+          }}
+          onPress={() => navigation.navigate("MainApp")}
+        >
+          <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+            🏠 Về Trang Chính
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <Text style={styles.title}>Theo dõi đơn hàng</Text>
 
       {/* Danh sách đơn hàng */}

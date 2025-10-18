@@ -40,7 +40,7 @@ export default function CartScreen() {
   const handleUpdateQuantity = (cartItemId, newQuantity) => {
     if (newQuantity < 1) return;
     dispatch(updateCartItem({ cartItemId, quantity: newQuantity }));
-    setTimeout(() => dispatch(getAllCart()), 300);
+    setTimeout(() => dispatch(getAllCart()), 1500);
   };
 
   const handleDelete = (cartItemId) => {
