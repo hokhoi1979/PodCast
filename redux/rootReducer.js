@@ -10,6 +10,7 @@ import updateProductReducer from "./Admin/Product/update_Product/updateProductSl
 import accountReducers from "./auth/loginSlice";
 import registerReducer from "./auth/registerSlice";
 import postChatReducer from "./ChatAI/chatAiSlice";
+import postFlashCardReducer from "./Flashcard/flashCardSlice";
 import getCommentsReducer from "./User/comment/fetch_comment/fetchCommentSlice";
 import postCommentReducer from "./User/comment/post_comment/postCommentSilce";
 import deleteFavoriteReducer from "./User/favourite/deleteFavorite/deleteFavoriteSlice";
@@ -19,8 +20,8 @@ import getAllPodcastReducer from "./User/fetchAllPodcast/getAllPodcastSlice";
 import fetchCategoryReducer from "./User/fetchCategory/fetchCategorySlice";
 import fetchPodcastByCateReducer from "./User/fetchPodcastByCate/fetchPodcastByCateSlice";
 import postLetterReducer from "./User/letter/postLetterSlice";
-import getAllUserReducer from "./User/manageUser/getAllUser/getAllUserSlice";
 import banUserReducer from "./User/manageUser/banUser/banUserSlice";
+import getAllUserReducer from "./User/manageUser/getAllUser/getAllUserSlice";
 import unBanUserReducer from "./User/manageUser/unBanUser/unBanUserSlice";
 
 const rootReducer = combineReducers({
@@ -54,6 +55,7 @@ const rootReducer = combineReducers({
   postComment: postCommentReducer, // NEW
   postLetter: postLetterReducer,
   chatAI: postChatReducer,
+  postFlashCard: postFlashCardReducer,
 });
 
 export default rootReducer;
