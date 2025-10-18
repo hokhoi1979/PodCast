@@ -1,6 +1,5 @@
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { AntDesign, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import logo from "../../assests/logo.jpg";
 
@@ -25,6 +24,9 @@ export default function Header() {
         <Text style={styles.title}>Healink</Text>
       </View>
       <View style={styles.rightSide}>
+        <TouchableOpacity onPress={() => navigation.navigate("Search")}>
+          <EvilIcons name="search" size={24} color="black" />
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Shop")}>
           <AntDesign name="shopping-cart" size={24} color="#604B3B" />
         </TouchableOpacity>
