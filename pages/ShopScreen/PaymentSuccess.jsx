@@ -6,7 +6,6 @@ export default function PaymentSuccess({ route, navigation }) {
   const userId = useSelector((state) => state.auth?.user?.id);
 
   const handleTrackOrder = () => {
-    console.log("➡ ProfileScreen userId:", userId);
     navigation.navigate("TrackOrder", { userId });
   };
 
@@ -16,46 +15,93 @@ export default function PaymentSuccess({ route, navigation }) {
         source={require("../../assests/success.png")}
         style={styles.image}
       />
+
       <Text style={styles.title}>Thanh toán thành công 🎉</Text>
-      <Text style={styles.text}>Mã đơn hàng: {orderId}</Text>
+      <Text style={styles.subtitle}>Cảm ơn bạn đã mua hàng!</Text>
+      <Text style={styles.text}>
+        Mã đơn hàng: <Text style={styles.bold}>{orderId}</Text>
+      </Text>
+
       <TouchableOpacity
-        style={styles.button}
+        style={styles.primaryButton}
         onPress={() => navigation.navigate("Home")}
       >
-        <Text style={styles.buttonText}>Về trang chủ</Text>
+        <Text style={styles.primaryText}>Về trang chủ</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.trackButton} onPress={handleTrackOrder}>
-        <Text style={styles.trackText}>Theo dõi đơn hàng</Text>
+
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={handleTrackOrder}
+      >
+        <Text style={styles.secondaryText}>Theo dõi đơn hàng</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  image: { width: 120, height: 120, marginBottom: 20 },
-  title: { fontSize: 22, fontWeight: "700", color: "#16a34a" },
-  text: { fontSize: 16, marginVertical: 10 },
-  button: {
-    marginTop: 20,
-    backgroundColor: "#4f46e5",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  buttonText: { color: "#fff", fontWeight: "600" },
-  trackButton: {
-    backgroundColor: "#8B4513",
-    alignItems: "center",
+  container: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
     justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    minWidth: 180,
-    marginBottom: 12,
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
-  trackText: {
+  image: {
+    width: 140,
+    height: 140,
+    marginBottom: 25,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#16a34a",
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#374151",
+    marginBottom: 20,
+  },
+  text: {
+    fontSize: 15,
+    color: "#555",
+    marginBottom: 30,
+  },
+  bold: {
+    fontWeight: "700",
+    color: "#111",
+  },
+  primaryButton: {
+    backgroundColor: "#16a34a",
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    width: "80%",
+    alignItems: "center",
+    marginBottom: 12,
+    shadowColor: "#16a34a",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  primaryText: {
     color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  secondaryButton: {
+    borderColor: "#16a34a",
+    borderWidth: 1.5,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    width: "80%",
+    alignItems: "center",
+  },
+  secondaryText: {
+    color: "#16a34a",
     fontSize: 16,
     fontWeight: "600",
   },

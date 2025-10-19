@@ -3,7 +3,7 @@ import Slider from "@react-native-community/slider";
 import { Audio } from "expo-av";
 import { Image } from "expo-image";
 import { Heart, MessageCircle, Pause, Play } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
