@@ -5,7 +5,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 30000, // Tăng timeout lên 30 giây cho AI API
   headers: {
     "Content-Type": "application/json",
   },
@@ -26,7 +26,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error("API error:", error.response?.data || error.message);
+    // Xử lý timeout riêng cho AI API
+    if (error.code === "ECONNABORTED" && error.config?.url?.includes("/ai/")) {
+      console.error("AI API timeout:", error.message);
+    } else {
+      console.error("API error:", error.response?.data || error.message);
+    }
     return Promise.reject(error);
   }
 );

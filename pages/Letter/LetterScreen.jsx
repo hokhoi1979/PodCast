@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
 import { postLetter } from "../../redux/User/letter/postLetterSlice";
+import { getProfile } from "../../redux/User/profile/getProfileSlice";
 import Header from "../../shared/header/Header";
 
 export default function LetterScreen() {
@@ -24,40 +25,66 @@ export default function LetterScreen() {
   const [sendTime, setSendTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  // Safety check for Toast
+  const showToast = (type, text1, visibilityTime = 3000) => {
+    try {
+      Toast.show({ type, text1, visibilityTime });
+    } catch (error) {
+      console.error("Toast error:", error);
+    }
+  };
+
   const dispatch = useDispatch();
   const { success: letterSuccess, loading } = useSelector(
-    (state) => state.postLetter
+    (state) => state?.postLetter || {}
   );
+  const { profile } = useSelector((state) => state?.getProfile || {});
+  const userId = useSelector((state) => state?.auth?.user?.id);
+
+  // 🔹 Gọi lại API lấy profile khi vào màn hình
+  useEffect(() => {
+    if (userId) {
+      console.log("📩 Fetching profile for user:", userId);
+      dispatch(getProfile(userId));
+    }
+  }, [dispatch, userId]);
+
+  // 🔹 Khi profile có email, tự gán vào input
+  useEffect(() => {
+    if (profile?.email) {
+      setRecipient(profile.email);
+      console.log("✅ LetterScreen email:", profile.email);
+    } else {
+      console.log("⚠️ Chưa có email trong profile:", profile);
+    }
+  }, [profile]);
 
   // Reset form sau khi gửi thành công
   useEffect(() => {
     if (letterSuccess) {
-      setRecipient("");
+      setRecipient(profile?.email || "");
       setLetterTitle("");
       setLetterDesc("");
       setSendTime(new Date());
     }
-  }, [letterSuccess]);
+  }, [letterSuccess, profile?.email]);
 
   const handleSubmitLetter = () => {
     if (!recipient.trim() || !letterTitle.trim() || !letterDesc.trim()) {
-      Toast.show({ type: "error", text1: "Vui lòng điền đầy đủ thông tin" });
+      showToast("error", "Vui lòng điền đầy đủ thông tin");
       return;
     }
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(recipient)) {
-      Toast.show({ type: "error", text1: "Email không hợp lệ" });
+      showToast("error", "Email không hợp lệ");
       return;
     }
 
     // Kiểm tra thời gian gửi phải > hiện tại
     if (sendTime <= new Date()) {
-      Toast.show({
-        type: "error",
-        text1: "Thời gian gửi phải sau thời điểm hiện tại",
-      });
+      showToast("error", "Thời gian gửi phải sau thời điểm hiện tại");
       return;
     }
 
@@ -96,10 +123,14 @@ export default function LetterScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email người nhận *</Text>
               <TextInput
-                style={styles.textInput}
+                editable={false}
+                selectTextOnFocus={false}
+                style={[
+                  styles.textInput,
+                  { backgroundColor: "#f5f5f5", color: "#6b6b6b" },
+                ]}
                 placeholder="example@email.com"
                 value={recipient}
-                onChangeText={setRecipient}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 placeholderTextColor="#999"
@@ -155,8 +186,17 @@ export default function LetterScreen() {
                   mode="datetime"
                   display="default"
                   onChange={(event, date) => {
-                    setShowDatePicker(false);
-                    if (date) setSendTime(date);
+                    // tránh crash khi user bấm Cancel
+                    if (event && event.type === "dismissed") {
+                      setShowDatePicker(false);
+                      return;
+                    }
+
+                    if (date) {
+                      setSendTime(date);
+                    }
+                    // đóng picker sau một chút để tránh race condition
+                    setTimeout(() => setShowDatePicker(false), 50);
                   }}
                   minimumDate={new Date()}
                 />

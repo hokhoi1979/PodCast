@@ -13,8 +13,10 @@ import watchPostChatSaga from "./ChatAI/chatAiSaga";
 import watchPostFlashCard from "./Flashcard/flashCardSaga";
 import watchCancelPayment from "./User/cancelPayment/cancelPaymentSaga";
 import watchCheckoutCart from "./User/checkoutCart/checkoutCartSaga";
+import watchDeleteComment from "./User/comment/delete_comment/deleteCommentSaga";
 import watchGetComments from "./User/comment/fetch_comment/fetchCommentSaga";
 import watchPostComment from "./User/comment/post_comment/postCommentSaga";
+import watchUpdateComment from "./User/comment/update_comment/updateCommentSaga";
 import watchDeleteCartItem from "./User/deleteCartItem/deleteCartItemSaga";
 import watchDeleteOrder from "./User/deleteOrder/deleteOrderSaga";
 import watchDeleteFavoriteSaga from "./User/favourite/deleteFavorite/deleteFavoriteSaga";
@@ -91,6 +93,8 @@ export default function* rootSaga() {
     //comment
     watchGetComments(),
     watchPostComment(),
+    watchUpdateComment(),
+    watchDeleteComment(),
     watchPostLetter(),
     watchPostChatSaga(),
     watchPostFlashCard(),
