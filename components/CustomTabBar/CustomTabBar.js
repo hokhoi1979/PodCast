@@ -1,6 +1,6 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
   return (
@@ -28,22 +28,22 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
           }
         };
 
-        // custom icon
         let icon;
-        if (route.name === "Search")
+        if (route.name === "Chat")
           icon = (
             <Ionicons
-              name="search"
+              name={isFocused ? "chatbubble" : "chatbubble-outline"}
               size={24}
-              color={isFocused ? "#007AFF" : "gray"}
+              color={isFocused ? "#946f4a" : "#9a9a9a"}
             />
           );
-        if (route.name === "Library")
+
+        if (route.name === "Favourite")
           icon = (
-            <MaterialIcons
-              name="library-books"
+            <Ionicons
+              name={isFocused ? "heart" : "heart-outline"}
               size={24}
-              color={isFocused ? "#007AFF" : "gray"}
+              color={isFocused ? "#946f4a" : "#9a9a9a"}
             />
           );
         if (route.name === "Home") {
@@ -58,7 +58,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
             <Ionicons
               name="cart"
               size={24}
-              color={isFocused ? "#007AFF" : "gray"}
+              color={isFocused ? "#946f4a" : "#9a9a9a"}
             />
           );
         if (route.name === "Profile")
@@ -66,7 +66,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
             <Ionicons
               name="person"
               size={24}
-              color={isFocused ? "#007AFF" : "gray"}
+              color={isFocused ? "#946f4a" : "#9a9a9a"}
             />
           );
 
@@ -81,7 +81,10 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
             {icon}
             {route.name !== "Home" && (
               <Text
-                style={{ color: isFocused ? "#007AFF" : "gray", fontSize: 12 }}
+                style={{
+                  color: isFocused ? "#946f4a" : "#9a9a9a",
+                  fontSize: 12,
+                }}
               >
                 {label}
               </Text>
@@ -99,7 +102,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     alignItems: "center",
     height: 70,
-    backgroundColor: "white",
+    backgroundColor: "#f1e8df",
     elevation: 5,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -116,10 +119,10 @@ const styles = StyleSheet.create({
     width: 65,
     height: 65,
     borderRadius: 32,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#946f4a",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 30, // nổi bật hơn
+    marginBottom: 30,
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 3 },

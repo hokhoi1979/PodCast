@@ -1,33 +1,92 @@
-import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { createStackNavigator } from "@react-navigation/stack";
 
 // Pages
+import FavouriteScreen from "../pages/FavouriteScreen/FavouriteScreen";
 import HomeScreen from "../pages/HomeScreen/HomeScreen";
-import SearchScreen from "../pages/SearchScreen/SearchScreen";
-import LibraryScreen from "../pages/LibraryScreen/LibraryScreen";
+import SignInScreen from "../pages/LoginScreen/SignInScreen";
+import SignUpScreen from "../pages/LoginScreen/SignUpScreen";
 import ProfileScreen from "../pages/ProfileScreen/ProfileScreen";
+import CartScreen from "../pages/ShopScreen/Cart";
+import CheckoutScreen from "../pages/ShopScreen/Checkout";
 import ShopScreen from "../pages/ShopScreen/ShopScreen";
 
 // Custom TabBar
 import CustomTabBar from "../components/CustomTabBar/CustomTabBar";
+import AdminScreen from "../pages/AdminScreen/AdminScreen";
+import CategoryManagementScreen from "../pages/AdminScreen/CategoryManagementScreen";
+import PodcastManagementScreen from "../pages/AdminScreen/PodcastManagementScreen";
+import ProductManagementScreen from "../pages/AdminScreen/ProductManagementScreen";
+import UserManagementScreen from "../pages/AdminScreen/UserManagementScreen";
+import ChatwithAIScreen from "../pages/ChatwithAI/ChatwitAIScreen";
+import FlashcardNative from "../pages/FlashCard/FlashCard";
+import LetterScreen from "../pages/Letter/LetterScreen";
+import PaymentCancel from "../pages/ShopScreen/PaymentCancel";
+import PaymentSuccess from "../pages/ShopScreen/PaymentSuccess";
+import TrackOrdersScreen from "../pages/ShopScreen/TrackOrder";
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
+// Tab Navigator (Main App)
+function MainTabNavigator() {
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+      initialRouteName="Home"
+    >
+      <Tab.Screen name="Chat" component={ChatwithAIScreen} />
+      <Tab.Screen name="Favourite" component={FavouriteScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Shop" component={ShopScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}
+
+// Main Stack Navigator
 export default function AppNavigation() {
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        tabBar={(props) => <CustomTabBar {...props} />}
+      <Stack.Navigator
         screenOptions={{ headerShown: false }}
+        initialRouteName="SignIn"
       >
-        <Tab.Screen name="Search" component={SearchScreen} />
-        <Tab.Screen name="Library" component={LibraryScreen} />
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Shop" component={ShopScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
-      </Tab.Navigator>
+        <Stack.Screen name="SignIn" component={SignInScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="MainApp" component={MainTabNavigator} />
+        <Stack.Screen name="Admin" component={AdminScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
+        <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
+        <Stack.Screen name="PaymentCancel" component={PaymentCancel} />
+        <Stack.Screen name="TrackOrder" component={TrackOrdersScreen} />
+        <Stack.Screen
+          name="CategoryManagement"
+          component={CategoryManagementScreen}
+        />
+        <Stack.Screen
+          name="ProductManagement"
+          component={ProductManagementScreen}
+        />
+        <Stack.Screen
+          name="PodcastManagement"
+          component={PodcastManagementScreen}
+        />
+        <Stack.Screen name="UserManagement" component={UserManagementScreen} />
+        <Stack.Screen
+          name="Letter"
+          component={LetterScreen}
+          options={{ title: "Gửi Thư" }}
+        />
+        <Stack.Screen
+          name="FlashCard"
+          component={FlashcardNative}
+          options={{ title: "FlashCard" }}
+        />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
