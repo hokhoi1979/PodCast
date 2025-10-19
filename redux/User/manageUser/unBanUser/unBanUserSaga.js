@@ -1,12 +1,12 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 
 import api from "../../../../config/apiConfig";
+import { getAllUserSuccess } from "../getAllUser/getAllUserSlice";
 import {
   UN__BAN__USER,
   unBanUserFail,
   unBanUserSuccess,
 } from "./unBanUserSlice";
-import { getAllUserSuccess } from "../getAllUser/getAllUserSlice";
 
 function* unBanUserSaga(action) {
   try {

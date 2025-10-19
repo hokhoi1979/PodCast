@@ -11,28 +11,34 @@ import {
 function* postCommentSaga(action) {
   try {
     const token = yield call(AsyncStorage.getItem, "accessToken");
-    const { podcastId, content } = action.payload;
+    const { podcastId, commentUser, content } = action.payload;
 
-    const response = yield call(
-      api.post,
-      `/api/comments/create`,
-      {
-        podcastId: podcastId,
-        content: content,
+    const requestData = {
+      podcastId: podcastId,
+      commentUser: commentUser,
+      content: content,
+    };
+
+    const response = yield call(api.post, `/api/comments/create`, requestData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    yield put(postCommentSuccess(response.data));
-    Toast.show({
-      type: "success",
-      text1: "Đã thêm bình luận thành công! 💬",
     });
+
+    if (response.status === 200 || response.status === 201) {
+      yield put(postCommentSuccess(response.data));
+      Toast.show({
+        type: "success",
+        text1: "Đã thêm bình luận thành công! 💬",
+      });
+    } else {
+      yield put(postCommentFailure(response.statusText));
+      Toast.show({
+        type: "error",
+        text1: "Thêm bình luận thất bại!",
+      });
+    }
   } catch (error) {
     console.error("Error posting comment:", error);
     const errorMessage = error.response?.data?.message || error.message;

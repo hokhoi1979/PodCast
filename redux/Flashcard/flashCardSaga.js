@@ -13,6 +13,7 @@ function* postFlashCardSaga(action) {
     const token = yield call(AsyncStorage.getItem, "accessToken");
     const { reply } = action.payload;
 
+    // Retry mechanism với timeout riêng cho flashcard
     const response = yield call(
       api.post,
       "/api/ai/flashcard",
@@ -22,6 +23,7 @@ function* postFlashCardSaga(action) {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+        timeout: 45000, // 45 giây cho AI API
       }
     );
 
@@ -40,14 +42,24 @@ function* postFlashCardSaga(action) {
       });
     }
   } catch (error) {
-    const errorMessage = error.response?.data?.message || error.message;
+    let errorMessage = "Có lỗi xảy ra khi tạo flashcard";
+
+    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+      errorMessage = "Kết nối quá chậm, vui lòng thử lại";
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
     yield put(postFlashCardFailure(errorMessage));
     Toast.show({
       type: "error",
-      text1: "Failed to create flashcard!",
+      text1: "Không thể tạo flashcard",
       text2: errorMessage,
+      visibilityTime: 4000,
     });
-    console.log(error);
+    console.log("Flashcard error:", error);
   }
 }
 

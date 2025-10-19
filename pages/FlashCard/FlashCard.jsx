@@ -12,16 +12,15 @@ import {
 import Icon from "react-native-vector-icons/Feather";
 import { useDispatch, useSelector } from "react-redux";
 import { postFlashCardRequest } from "../../redux/Flashcard/flashCardSlice";
+import Header from "../../shared/header/Header";
 
 export default function FlashcardNative() {
   const [isOpened, setIsOpened] = useState(false);
   const dispatch = useDispatch();
 
-  const {
-    loading,
-    data: flashResult,
-    error,
-  } = useSelector((state) => state.postFlashCard);
+  const { loading, data: flashResult } = useSelector(
+    (state) => state.postFlashCard
+  );
 
   const flapAnim = useRef(new Animated.Value(0)).current;
   const letterY = useRef(new Animated.Value(40)).current;
@@ -50,7 +49,7 @@ export default function FlashcardNative() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [isOpened]);
+  }, [isOpened, dispatch, flapAnim, letterY]);
 
   const flapRotateX = flapAnim.interpolate({
     inputRange: [0, 1],
@@ -60,60 +59,64 @@ export default function FlashcardNative() {
   const toggleOpen = () => setIsOpened((prev) => !prev);
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>✨ Flashcard Truyền Cảm Hứng ✨</Text>
+    <>
+      <Header />
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text style={styles.title}> Flashcard Truyền Cảm Hứng </Text>
 
-        <TouchableOpacity onPress={toggleOpen} activeOpacity={0.9}>
-          {/* Nắp thư */}
-          <Animated.View
-            style={[
-              styles.flap,
-              {
-                transform: [{ perspective: 1000 }, { rotateX: flapRotateX }],
-                backgroundColor: isOpened ? "#facc15" : "#fcd34d",
-              },
-            ]}
-          >
-            <Icon
-              name={isOpened ? "sun" : "heart"}
-              size={60}
-              color={isOpened ? "#eab308" : "#ef4444"}
-            />
-          </Animated.View>
-
-          {/* Thân thư */}
-          <View style={styles.body}>
+          <TouchableOpacity onPress={toggleOpen} activeOpacity={0.9}>
+            {/* Nắp thư */}
             <Animated.View
-              style={{
-                transform: [{ translateY: letterY }],
-                opacity: isOpened ? 1 : 0.001,
-                width: "100%",
-              }}
+              style={[
+                styles.flap,
+                {
+                  transform: [{ perspective: 1000 }, { rotateX: flapRotateX }],
+                  backgroundColor: isOpened ? "#8B4513" : "#8B4513",
+                },
+              ]}
             >
-              {loading && (
-                <View style={styles.center}>
-                  <ActivityIndicator size="large" color="#92400e" />
-                  <Text style={styles.loadingText}>
-                    Đang viết thư cho bạn...
-                  </Text>
-                </View>
-              )}
-
-              {!loading && flashResult && (
-                <ScrollView style={styles.letterScroll}>
-                  <Text style={styles.letterText}>{flashResult?.reply}</Text>
-                </ScrollView>
-              )}
-
-              {!isOpened && !loading && (
-                <Text style={styles.hint}>Nhấn để mở phong thư 💌</Text>
-              )}
+              <Icon
+                name={isOpened ? "sun" : "heart"}
+                size={60}
+                color={isOpened ? "#eab308" : "#ef4444"}
+              />
             </Animated.View>
-          </View>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+
+            {/* Thân thư */}
+            <View style={styles.body}>
+              <Animated.View
+                style={{
+                  transform: [{ translateY: letterY }],
+                  opacity: isOpened ? 1 : 0.001,
+                  width: "100%",
+                }}
+              >
+                {loading && (
+                  <View style={styles.center}>
+                    <ActivityIndicator size="large" color="#92400e" />
+                    <Text style={styles.loadingText}>
+                      Đang viết thư cho bạn...
+                    </Text>
+                  </View>
+                )}
+
+                {!loading && flashResult && (
+                  <ScrollView style={styles.letterScroll}>
+                    <Text style={styles.letterText}>{flashResult?.reply}</Text>
+                    <Text style={styles.signature}>Dear Secret Friend</Text>
+                  </ScrollView>
+                )}
+
+                {!isOpened && !loading && (
+                  <Text style={styles.hint}>Nhấn để mở phong thư 💌</Text>
+                )}
+              </Animated.View>
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </>
   );
 }
 
@@ -121,13 +124,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fffaf0",
-    alignItems: "center",
-    justifyContent: "center",
   },
   content: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 80,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 26,
@@ -171,6 +174,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     textAlign: "center",
+  },
+  signature: {
+    color: "#8B4513", // Màu nâu ấm
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "right",
+    marginTop: 20,
+    marginRight: 20,
+    fontStyle: "italic",
+    letterSpacing: 0.8,
   },
   hint: {
     color: "#92400e",

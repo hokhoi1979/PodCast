@@ -13,8 +13,10 @@ import postChatReducer from "./ChatAI/chatAiSlice";
 import postFlashCardReducer from "./Flashcard/flashCardSlice";
 import cancelPaymentReducer from "./User/cancelPayment/cancelPaymentSlice";
 import checkoutCartReducer from "./User/checkoutCart/checkoutCartSlice";
+import deleteCommentReducer from "./User/comment/delete_comment/deleteCommentSlice";
 import getCommentsReducer from "./User/comment/fetch_comment/fetchCommentSlice";
 import postCommentReducer from "./User/comment/post_comment/postCommentSilce";
+import updateCommentReducer from "./User/comment/update_comment/updateCommentSlice";
 import deleteCartItemReducer from "./User/deleteCartItem/deleteCartItemSlice";
 import deleteOrderReducer from "./User/deleteOrder/deleteOrderSlice";
 import deleteFavoriteReducer from "./User/favourite/deleteFavorite/deleteFavoriteSlice";
@@ -90,6 +92,8 @@ const rootReducer = combineReducers({
   //comment
   getComments: getCommentsReducer, // NEW
   postComment: postCommentReducer, // NEW
+  updateComment: updateCommentReducer,
+  deleteComment: deleteCommentReducer,
   postLetter: postLetterReducer,
   chatAI: postChatReducer,
   postFlashCard: postFlashCardReducer,
