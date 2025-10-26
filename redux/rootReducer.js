@@ -44,6 +44,7 @@ import getProfileReducer from "./User/profile/getProfileSlice";
 import updateAddressReducer from "./User/updateAddress/updateAddressSlice";
 import updateCartItemReducer from "./User/updateCartItem/updateCartItemSlice";
 import updateStatusOrderReducer from "./User/updateStatusOrder/updateStatusOrderSlice";
+import getPodcastIdReducer from "./User/fetchPodcastById/fetchPodcastByIdSlice";
 
 const rootReducer = combineReducers({
   auth: accountReducers,
@@ -93,6 +94,8 @@ const rootReducer = combineReducers({
   postFavorite: postFavoriteReducer,
   getFavorite: getFavoriteReducer,
   deleteFavorite: deleteFavoriteReducer,
+  fetchPodcastById: getPodcastIdReducer,
+
   //Podcast
   deletePodcast: deletePodcastReducer,
   postPodcast: postPodcastReducer,

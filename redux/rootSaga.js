@@ -44,6 +44,7 @@ import watchGetProfile from "./User/profile/getProfileSaga";
 import { watchUpdateAddressSaga } from "./User/updateAddress/updateAddressSaga";
 import watchUpdateCartItem from "./User/updateCartItem/updateCartItemSaga";
 import watchUpdateStatusOrder from "./User/updateStatusOrder/updateStatusOrderSaga";
+import watchGetPodcastIdSaga from "./User/fetchPodcastById/fetchPodcastByIdSaga";
 
 export default function* rootSaga() {
   yield all([
@@ -94,6 +95,8 @@ export default function* rootSaga() {
     watchPostFavoriteSaga(),
     watchGetFavoriteSaga(),
     watchDeleteFavoriteSaga(),
+    watchGetPodcastIdSaga(),
+
     //podcast
     watchUpdatePodcast(),
     watchDeletePodcast(),

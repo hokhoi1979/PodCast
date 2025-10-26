@@ -8,6 +8,8 @@ import {
   ShoppingCart,
   Truck,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -159,228 +161,232 @@ export default function TrackOrdersScreen({ route, navigation }) {
     );
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={["#f59e0b"]}
-          tintColor="#f59e0b"
-        />
-      }
-    >
-      {/* 🔹 Nút quay lại trang chính */}
-      <View style={{ alignItems: "center", marginTop: 20, marginBottom: 40 }}>
+    <SafeAreaView>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#f59e0b"]}
+            tintColor="#f59e0b"
+          />
+        }
+      >
+        {/* 🔹 Nút quay lại trang chính */}
+        <View style={{ alignItems: "center", marginTop: 20, marginBottom: 40 }}>
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#f59e0b",
+              paddingVertical: 12,
+              paddingHorizontal: 30,
+              borderRadius: 8,
+            }}
+            onPress={() => navigation.navigate("MainApp")}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+              🏠 Về Trang Chính
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.title}>Theo dõi đơn hàng</Text>
+
+        {/* Nút refresh comment để test */}
         <TouchableOpacity
           style={{
-            backgroundColor: "#f59e0b",
-            paddingVertical: 12,
-            paddingHorizontal: 30,
+            backgroundColor: "#6366f1",
+            paddingVertical: 8,
+            paddingHorizontal: 16,
             borderRadius: 8,
+            alignSelf: "center",
+            marginBottom: 16,
           }}
-          onPress={() => navigation.navigate("MainApp")}
+          onPress={() => {
+            dispatch(fetchAllCommentByUser(userId));
+          }}
         >
-          <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-            🏠 Về Trang Chính
+          <Text style={{ color: "#fff", fontWeight: "600" }}>
+            🔄 Refresh Comments
           </Text>
         </TouchableOpacity>
-      </View>
 
-      <Text style={styles.title}>Theo dõi đơn hàng</Text>
+        {/* Danh sách đơn hàng */}
+        <View style={styles.orderListContainer}>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={orders}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item, index }) => (
+              <TouchableOpacity
+                onPress={() => setSelectedOrder(index)}
+                style={[
+                  styles.orderCard,
+                  selectedOrder === index && styles.orderCardActive,
+                ]}
+              >
+                <Image
+                  source={{
+                    uri:
+                      item.items?.[0]?.product?.imageUrl ||
+                      "https://placehold.co/80",
+                  }}
+                  style={styles.orderImage}
+                />
+                <Text style={styles.orderId}>#{item.id}</Text>
+                <Text style={styles.orderPrice}>
+                  {item.totalAmount?.toLocaleString("vi-VN") || 0}₫
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
 
-      {/* Nút refresh comment để test */}
-      <TouchableOpacity
-        style={{
-          backgroundColor: "#6366f1",
-          paddingVertical: 8,
-          paddingHorizontal: 16,
-          borderRadius: 8,
-          alignSelf: "center",
-          marginBottom: 16,
-        }}
-        onPress={() => {
-          dispatch(fetchAllCommentByUser(userId));
-        }}
-      >
-        <Text style={{ color: "#fff", fontWeight: "600" }}>
-          🔄 Refresh Comments
-        </Text>
-      </TouchableOpacity>
+        {/* Chi tiết đơn hàng */}
+        <View style={styles.detailContainer}>
+          <Text style={styles.orderTitle}>Đơn hàng #{selected.id}</Text>
+          <Text style={styles.orderDate}>
+            {selected.createdAt
+              ? new Date(selected.createdAt).toLocaleString("vi-VN")
+              : ""}
+          </Text>
+          <View style={styles.addressBox}>
+            <Text style={styles.addressLabel}>📍 Địa chỉ nhận hàng</Text>
+            <Text style={styles.addressText}>
+              {selected.address || "Không có địa chỉ"}
+            </Text>
+          </View>
 
-      {/* Danh sách đơn hàng */}
-      <View style={styles.orderListContainer}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={orders}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item, index }) => (
+          {selected.items?.map((item) => {
+            return (
+              <View key={item.id} style={styles.itemCard}>
+                <Image
+                  source={{
+                    uri: item.product?.imageUrl || "https://placehold.co/100",
+                  }}
+                  style={styles.itemImage}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.itemName}>
+                    {item.product?.name || "Sản phẩm không xác định"}
+                  </Text>
+                  <Text style={styles.itemQuantity}>
+                    Số lượng: {item.quantity}
+                  </Text>
+                  <Text style={styles.itemPrice}>
+                    {item.price?.toLocaleString("vi-VN") || 0}₫
+                  </Text>
+
+                  {/* Nút đánh giá sản phẩm */}
+                  {(selected.status?.toLowerCase() === "completed" ||
+                    selected.status?.toLowerCase() === "received") && (
+                    <TouchableOpacity
+                      style={styles.rateBtn}
+                      onPress={() => handleRateProduct(item.product)}
+                    >
+                      <Text style={styles.rateBtnText}>
+                        ⭐ Đánh giá sản phẩm
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Nút xác nhận */}
+          {selected.status?.toUpperCase() === "DELIVERED" && (
             <TouchableOpacity
-              onPress={() => setSelectedOrder(index)}
-              style={[
-                styles.orderCard,
-                selectedOrder === index && styles.orderCardActive,
-              ]}
+              style={styles.confirmBtn}
+              onPress={() => handleConfirmReceived(selected.id)}
             >
-              <Image
-                source={{
-                  uri:
-                    item.items?.[0]?.product?.imageUrl ||
-                    "https://placehold.co/80",
-                }}
-                style={styles.orderImage}
-              />
-              <Text style={styles.orderId}>#{item.id}</Text>
-              <Text style={styles.orderPrice}>
-                {item.totalAmount?.toLocaleString("vi-VN") || 0}₫
-              </Text>
+              <Text style={styles.confirmText}>Đã nhận hàng</Text>
             </TouchableOpacity>
           )}
-        />
-      </View>
 
-      {/* Chi tiết đơn hàng */}
-      <View style={styles.detailContainer}>
-        <Text style={styles.orderTitle}>Đơn hàng #{selected.id}</Text>
-        <Text style={styles.orderDate}>
-          {selected.createdAt
-            ? new Date(selected.createdAt).toLocaleString("vi-VN")
-            : ""}
-        </Text>
-        <View style={styles.addressBox}>
-          <Text style={styles.addressLabel}>📍 Địa chỉ nhận hàng</Text>
-          <Text style={styles.addressText}>
-            {selected.address || "Không có địa chỉ"}
-          </Text>
+          {/* Tổng tiền */}
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalLabel}>Tổng cộng:</Text>
+            <Text style={styles.totalPrice}>
+              {selected.totalAmount?.toLocaleString("vi-VN") || 0}₫
+            </Text>
+          </View>
         </View>
 
-        {selected.items?.map((item) => {
-          return (
-            <View key={item.id} style={styles.itemCard}>
-              <Image
-                source={{
-                  uri: item.product?.imageUrl || "https://placehold.co/100",
-                }}
-                style={styles.itemImage}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemName}>
-                  {item.product?.name || "Sản phẩm không xác định"}
-                </Text>
-                <Text style={styles.itemQuantity}>
-                  Số lượng: {item.quantity}
-                </Text>
-                <Text style={styles.itemPrice}>
-                  {item.price?.toLocaleString("vi-VN") || 0}₫
-                </Text>
+        {/* Timeline trạng thái */}
+        <View style={styles.timelineContainer}>
+          <Text style={styles.timelineTitle}>Trạng thái đơn hàng</Text>
 
-                {/* Nút đánh giá sản phẩm */}
-                {(selected.status?.toLowerCase() === "completed" ||
-                  selected.status?.toLowerCase() === "received") && (
-                  <TouchableOpacity
-                    style={styles.rateBtn}
-                    onPress={() => handleRateProduct(item.product)}
-                  >
-                    <Text style={styles.rateBtnText}>⭐ Đánh giá sản phẩm</Text>
-                  </TouchableOpacity>
-                )}
+          {orderSteps.map((step, index) => {
+            const currentIndex = getOrderStep(selected?.status);
+            const isDone = index < currentIndex;
+            const isCurrent = index === currentIndex;
+            const Icon = step.icon;
+
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.stepContainer,
+                  isDone
+                    ? styles.stepDone
+                    : isCurrent
+                    ? styles.stepCurrent
+                    : styles.stepPending,
+                ]}
+              >
+                <Icon
+                  size={22}
+                  color={isDone || isCurrent ? "white" : "#a8a8a8"}
+                />
+                <Text style={styles.stepText}>{step.title}</Text>
               </View>
-            </View>
-          );
-        })}
+            );
+          })}
+        </View>
 
-        {/* Nút xác nhận */}
-        {selected.status?.toUpperCase() === "DELIVERED" && (
-          <TouchableOpacity
-            style={styles.confirmBtn}
-            onPress={() => handleConfirmReceived(selected.id)}
-          >
-            <Text style={styles.confirmText}>Đã nhận hàng</Text>
-          </TouchableOpacity>
+        {/* Danh sách đánh giá của user */}
+
+        {fetchCommentUser && fetchCommentUser.length > 0 && (
+          <View style={styles.commentsContainer}>
+            <Text style={styles.commentsTitle}>Đánh giá của bạn</Text>
+            {fetchCommentUser.map((comment) => (
+              <View key={comment.id} style={styles.commentCard}>
+                <View style={styles.commentHeader}>
+                  <Text style={styles.commentProductName}>
+                    {comment.product?.name || "Sản phẩm không xác định"}
+                  </Text>
+                  <Text style={styles.commentDate}>
+                    {formatDate(comment.dateCreated)}
+                  </Text>
+                </View>
+
+                <View style={styles.commentRating}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Text key={star} style={styles.star}>
+                      {star <= comment.star ? "⭐" : "☆"}
+                    </Text>
+                  ))}
+                  <Text style={styles.ratingText}>{comment.star}/5</Text>
+                </View>
+
+                <Text style={styles.commentText}>{comment.comment}</Text>
+              </View>
+            ))}
+          </View>
         )}
 
-        {/* Tổng tiền */}
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Tổng cộng:</Text>
-          <Text style={styles.totalPrice}>
-            {selected.totalAmount?.toLocaleString("vi-VN") || 0}₫
-          </Text>
-        </View>
-      </View>
-
-      {/* Timeline trạng thái */}
-      <View style={styles.timelineContainer}>
-        <Text style={styles.timelineTitle}>Trạng thái đơn hàng</Text>
-
-        {orderSteps.map((step, index) => {
-          const currentIndex = getOrderStep(selected?.status);
-          const isDone = index < currentIndex;
-          const isCurrent = index === currentIndex;
-          const Icon = step.icon;
-
-          return (
-            <View
-              key={index}
-              style={[
-                styles.stepContainer,
-                isDone
-                  ? styles.stepDone
-                  : isCurrent
-                  ? styles.stepCurrent
-                  : styles.stepPending,
-              ]}
-            >
-              <Icon
-                size={22}
-                color={isDone || isCurrent ? "white" : "#a8a8a8"}
-              />
-              <Text style={styles.stepText}>{step.title}</Text>
-            </View>
-          );
-        })}
-      </View>
-
-      {/* Danh sách đánh giá của user */}
-
-      {fetchCommentUser && fetchCommentUser.length > 0 && (
-        <View style={styles.commentsContainer}>
-          <Text style={styles.commentsTitle}>Đánh giá của bạn</Text>
-          {fetchCommentUser.map((comment) => (
-            <View key={comment.id} style={styles.commentCard}>
-              <View style={styles.commentHeader}>
-                <Text style={styles.commentProductName}>
-                  {comment.product?.name || "Sản phẩm không xác định"}
-                </Text>
-                <Text style={styles.commentDate}>
-                  {formatDate(comment.dateCreated)}
-                </Text>
-              </View>
-
-              <View style={styles.commentRating}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Text key={star} style={styles.star}>
-                    {star <= comment.star ? "⭐" : "☆"}
-                  </Text>
-                ))}
-                <Text style={styles.ratingText}>{comment.star}/5</Text>
-              </View>
-
-              <Text style={styles.commentText}>{comment.comment}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {/* Rating Modal */}
-      <RatingModal
-        visible={showRatingModal}
-        onClose={handleCloseRatingModal}
-        productId={selectedProductForRating?.id}
-        userId={userId}
-        productName={selectedProductForRating?.name}
-      />
-    </ScrollView>
+        {/* Rating Modal */}
+        <RatingModal
+          visible={showRatingModal}
+          onClose={handleCloseRatingModal}
+          productId={selectedProductForRating?.id}
+          userId={userId}
+          productName={selectedProductForRating?.name}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
