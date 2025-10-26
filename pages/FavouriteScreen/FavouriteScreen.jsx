@@ -7,226 +7,324 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
-import { getFavorite } from "../../redux/User/favourite/getFavorite/getFavoriteSlice";
 import Slider from "@react-native-community/slider";
 import { Audio } from "expo-av";
-import { Pause, Play, Volume2, VolumeX } from "lucide-react-native";
+
+import { getFavorite } from "../../redux/User/favourite/getFavorite/getFavoriteSlice";
 import { deleteFavorite } from "../../redux/User/favourite/deleteFavorite/deleteFavoriteSlice";
+import { getPodcastId } from "../../redux/User/fetchPodcastById/fetchPodcastByIdSlice";
 
 export default function FavouriteScreen() {
-  const [favourites, setFavourites] = useState([]);
-  const [checkFavo, setCheckFavo] = useState([]);
-  const [selectedPodcast, setSelectedPodcast] = useState(null);
-  const [sound, setSound] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(1);
-  const [muted, setMuted] = useState(false);
-  const [descExpanded, setDescExpanded] = useState(false);
-
   const dispatch = useDispatch();
   const { getFavo } = useSelector((state) => state.getFavorite);
+  const { getPodId } = useSelector((state) => state.fetchPodcastById);
+  const [currentIndex, setCurrentIndex] = useState(-1);
 
+  const [favourites, setFavourites] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [positionMillis, setPositionMillis] = useState(0);
+  const [durationMillis, setDurationMillis] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const [shouldPlay, setShouldPlay] = useState(false);
+  const soundRef = useRef(null);
+  const lastUpdateRef = useRef(0);
+
+  // Load favorites
   useEffect(() => {
     dispatch(getFavorite());
   }, [dispatch]);
 
+  // Update list
   useEffect(() => {
-    if (getFavo?.content) {
-      const favIds = getFavo.content.map((item) => item?.podcastId);
-      setCheckFavo(favIds);
-    }
+    if (getFavo?.content) setFavourites(getFavo.content);
   }, [getFavo]);
 
-  // console.log("DATA", getFavo);
-
-  useEffect(() => {
-    if (getFavo?.content) setFavourites(getFavo?.content);
-  }, [getFavo]);
-
-  console.log("IDD", favourites);
-
+  // Cleanup audio
   useEffect(() => {
     return () => {
-      if (sound) {
-        sound.unloadAsync();
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch(() => {});
+        soundRef.current = null;
       }
     };
-  }, [sound]);
+  }, []);
 
+  // Handle select podcast
   const handleSelectPodcast = async (item) => {
     try {
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-        setSound(null);
-        setIsPlaying(false);
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
       }
-      setSelectedPodcast(item.podcast);
+      const index = favourites.findIndex((f) => f.podcastId === item.podcastId);
+      setCurrentIndex(index);
+      setSelectedId(item?.podcastId);
+      dispatch(getPodcastId(item?.podcastId));
+      setShouldPlay(true);
+    } catch (e) {
+      console.error("Select podcast error", e);
+    }
+  };
 
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: item.podcast.audioUrl },
-        { shouldPlay: true, volume: volume }
-      );
-      setSound(newSound);
-      setIsPlaying(true);
-    } catch (error) {
-      console.error("Error playing audio:", error);
+  const handleNext = () => {
+    if (currentIndex < favourites.length - 1) {
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+      handleSelectPodcast(favourites[nextIndex]);
+    } else {
       Toast.show({
-        type: "error",
-        text1: "Lỗi phát audio",
-        text2: "Không thể phát podcast này",
+        type: "info",
+        text1: "Đã đến bài cuối cùng",
       });
     }
   };
 
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      const prevIndex = currentIndex - 1;
+      setCurrentIndex(prevIndex);
+      handleSelectPodcast(favourites[prevIndex]);
+    } else {
+      Toast.show({
+        type: "info",
+        text1: "Đang ở bài đầu tiên",
+      });
+    }
+  };
+
+  // When getPodId updated → play audio
+  useEffect(() => {
+    const play = async () => {
+      if (!shouldPlay || !getPodId?.audioUrl) return;
+
+      try {
+        if (soundRef.current) {
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+        }
+
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+        });
+
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: getPodId.audioUrl },
+          { shouldPlay: true, volume, isLooping: false },
+          (status) => {
+            if (!status?.isLoaded) return;
+
+            const now = Date.now();
+            // chỉ update mỗi 500ms
+            if (now - lastUpdateRef.current > 500) {
+              lastUpdateRef.current = now;
+
+              setPositionMillis(status.positionMillis || 0);
+              setDurationMillis(status.durationMillis || 0);
+              setIsPlaying(status.isPlaying || false);
+
+              if (status.didJustFinish) setIsPlaying(false);
+            }
+          }
+        );
+
+        soundRef.current = sound;
+        setIsPlaying(true);
+      } catch (e) {
+        console.log("Play error", e);
+        Toast.show({
+          type: "error",
+          text1: "Không thể phát podcast",
+        });
+      } finally {
+        setShouldPlay(false);
+      }
+    };
+    play();
+  }, [getPodId]);
+
+  // Play / pause
   const handlePlayPause = async () => {
-    if (!sound) return;
-    if (isPlaying) {
-      await sound.pauseAsync();
+    if (!soundRef.current) return;
+    const status = await soundRef.current.getStatusAsync();
+    if (!status.isLoaded) return;
+    if (status.isPlaying) {
+      await soundRef.current.pauseAsync();
       setIsPlaying(false);
     } else {
-      await sound.playAsync();
+      await soundRef.current.playAsync();
       setIsPlaying(true);
     }
   };
 
-  const handleVolumeChange = async (value) => {
-    setVolume(value);
-    if (sound) await sound.setVolumeAsync(value);
-    if (value === 0) setMuted(true);
-    else setMuted(false);
+  const handleSeek = async (val) => {
+    if (soundRef.current)
+      await soundRef.current.setPositionAsync(Math.round(val * 1000));
+  };
+
+  const handleVolumeChange = async (val) => {
+    setVolume(val);
+    if (soundRef.current) await soundRef.current.setVolumeAsync(val);
+    setMuted(val === 0);
   };
 
   const toggleMute = async () => {
-    const newMute = !muted;
-    setMuted(newMute);
-    if (sound) await sound.setIsMutedAsync(newMute);
+    const m = !muted;
+    setMuted(m);
+    if (soundRef.current) await soundRef.current.setIsMutedAsync(m);
   };
 
   const handleRemove = (id) => {
-    if (!id) {
-      return;
+    dispatch(deleteFavorite(id));
+    if (selectedId === id) {
+      if (soundRef.current) {
+        soundRef.current.stopAsync();
+        soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      setSelectedId(null);
+      setIsPlaying(false);
     }
-    const check = checkFavo.includes(id);
-    if (check) {
-      dispatch(deleteFavorite(id));
-    }
+  };
+
+  const formatTime = (ms) => {
+    if (!ms || ms <= 0) return "0:00";
+    const s = Math.floor(ms / 1000);
+    return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Ionicons
-          name="heart-outline"
+          name="heart"
           size={20}
-          color="red"
-          style={{ marginRight: 6 }}
+          color="#b66f3a"
+          style={{ marginRight: 8 }}
         />
         <Text style={styles.headerText}>Yêu thích</Text>
       </View>
 
-      <View style={styles.featured}>
+      {/* Player */}
+      <View style={styles.cardPlayer}>
         <Image
-          style={styles.featuredImage}
           source={{
             uri:
-              selectedPodcast?.imageUrl ||
-              "https://images.pexels.com/photos/3807755/pexels-photo-3807755.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop",
+              getPodId?.imageUrl ||
+              "https://images.pexels.com/photos/3807755/pexels-photo-3807755.jpeg?auto=compress&cs=tinysrgb&w=600",
           }}
+          style={styles.playerImage}
         />
-        <View style={styles.featuredInfo}>
-          <Text style={styles.featuredTitle} numberOfLines={2}>
-            {selectedPodcast?.title || "Chọn podcast để nghe"}
+        <View style={styles.playerBody}>
+          <Text style={styles.title} numberOfLines={2}>
+            {getPodId?.title || "Chọn podcast để nghe"}
+          </Text>
+          <Text style={styles.desc} numberOfLines={2}>
+            {getPodId?.description || "Hãy chọn một podcast yêu thích bên dưới"}
           </Text>
 
-          {!!selectedPodcast?.description && (
-            <>
-              <Text
-                style={styles.featuredDesc}
-                numberOfLines={descExpanded ? undefined : 2}
-              >
-                {selectedPodcast.description}
-              </Text>
-              {selectedPodcast.description.length > 100 && (
-                <TouchableOpacity onPress={() => setDescExpanded((v) => !v)}>
-                  <Text style={styles.expandText}>
-                    {descExpanded ? "Thu gọn" : "Xem thêm"}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </>
-          )}
+          {/* Progress */}
+          <View style={styles.progressRow}>
+            <Text style={styles.timeText}>{formatTime(positionMillis)}</Text>
+            <Slider
+              style={styles.progressSlider}
+              value={durationMillis ? positionMillis / 1000 : 0}
+              minimumValue={0}
+              maximumValue={
+                durationMillis ? Math.ceil(durationMillis / 1000) : 0
+              }
+              minimumTrackTintColor="#f06f3a"
+              maximumTrackTintColor="#eee"
+              thumbTintColor="#f06f3a"
+              onSlidingComplete={handleSeek}
+              disabled={!getPodId?.audioUrl}
+            />
+            <Text style={styles.timeText}>{formatTime(durationMillis)}</Text>
+          </View>
 
-          <TouchableOpacity
-            style={styles.playButton}
-            onPress={handlePlayPause}
-            disabled={!selectedPodcast}
-          >
-            {isPlaying ? (
-              <Pause size={16} color="#fff" fill="#fff" />
-            ) : (
-              <Play size={16} color="#fff" fill="#fff" />
-            )}
-            <Text style={styles.playButtonText}>
-              {isPlaying ? "Đang phát" : "Phát"}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.volumeRow}>
-            <TouchableOpacity
-              style={styles.volumeIconBtn}
-              onPress={toggleMute}
-              disabled={!selectedPodcast}
-            >
-              {muted || volume === 0 ? (
-                <VolumeX size={18} color="#20B2AA" />
-              ) : (
-                <Volume2 size={18} color="#20B2AA" />
-              )}
+          {/* Controls */}
+          <View style={styles.controlsRow}>
+            <TouchableOpacity style={styles.iconButton} onPress={handlePrev}>
+              <Ionicons name="play-skip-back" size={24} color="#666" />
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.playButton}
+              onPress={handlePlayPause}
+            >
+              <Ionicons
+                name={isPlaying ? "pause" : "play"}
+                size={28}
+                color="#fff"
+                style={{ marginLeft: isPlaying ? 2 : 0 }}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.iconButton} onPress={handleNext}>
+              <Ionicons name="play-skip-forward" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Volume + comment */}
+          <View style={styles.bottomRow}>
+            <TouchableOpacity onPress={toggleMute} style={{ padding: 6 }}>
+              <Ionicons
+                name={muted || volume === 0 ? "volume-mute" : "volume-high"}
+                size={20}
+                color="#b66f3a"
+              />
+            </TouchableOpacity>
+
             <Slider
               style={styles.volumeSlider}
               minimumValue={0}
               maximumValue={1}
               step={0.01}
               value={volume}
-              minimumTrackTintColor="#20B2AA"
-              maximumTrackTintColor="#E0E0E0"
-              thumbTintColor="#20B2AA"
               onValueChange={handleVolumeChange}
-              disabled={!selectedPodcast}
+              minimumTrackTintColor="#b66f3a"
+              maximumTrackTintColor="#eee"
+              thumbTintColor={Platform.OS === "android" ? "#b66f3a" : undefined}
             />
-            <Text style={styles.volumeLabel}>{Math.round(volume * 100)}%</Text>
+
+            <TouchableOpacity style={styles.commentBtn}>
+              <Text style={styles.commentText}>Bình luận</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
 
+      {/* List */}
       <FlatList
         data={favourites}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(it) => `${it.id}`}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.card}
+            style={styles.itemRow}
             onPress={() => handleSelectPodcast(item)}
           >
-            <Image source={{ uri: item?.podcastImage }} style={styles.image} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{item?.podcastTitle}</Text>
-              <Text style={styles.subtitle} numberOfLines={2}>
-                {item?.podcast?.description}
+            <Image
+              source={{ uri: item.podcastImage }}
+              style={styles.itemImage}
+            />
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={styles.itemTitle}>{item.podcastTitle}</Text>
+              <Text style={styles.itemSub} numberOfLines={1}>
+                {item.podcast?.description}
               </Text>
             </View>
-
-            <Ionicons
-              onPress={() => handleRemove(item.id)}
-              name="heart"
-              size={22}
-              color="#f45454"
-            />
+            <TouchableOpacity onPress={() => handleRemove(item.id)}>
+              <Ionicons name="heart" size={22} color="#f45454" />
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
         ListEmptyComponent={
@@ -234,116 +332,108 @@ export default function FavouriteScreen() {
             Chưa có mục yêu thích nào
           </Text>
         }
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 120, paddingTop: 8 }}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  contentContainer: { paddingBottom: 100 },
-  featured: {
-    flexDirection: "row",
-    backgroundColor: "#FFF",
-    margin: 16,
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  featuredImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 12,
-    marginRight: 14,
-    backgroundColor: "#E0E0E0",
-  },
-  featuredInfo: { flex: 1, justifyContent: "center" },
-  featuredTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 6,
-  },
-  featuredDesc: {
-    fontSize: 13,
-    color: "#666",
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  expandText: {
-    color: "#20B2AA",
-    fontSize: 13,
-    fontWeight: "600",
-    marginTop: 2,
-  },
-  playButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#20B2AA",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  container: { flex: 1, backgroundColor: "#f8f5f0" },
+  header: { flexDirection: "row", alignItems: "center", padding: 16 },
+  headerText: { fontSize: 18, fontWeight: "700", color: "#4b3b2b" },
+  cardPlayer: {
+    marginHorizontal: 16,
+    backgroundColor: "#fff",
     borderRadius: 24,
-    alignSelf: "flex-start",
-    marginTop: 8,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+    marginBottom: 18,
   },
-  playButtonText: {
-    color: "#fff",
-    marginLeft: 6,
-    fontWeight: "600",
-    fontSize: 14,
+  playerImage: {
+    width: "100%",
+    height: 200,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: "#f0ebe6",
   },
-  volumeRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
-  volumeIconBtn: { padding: 6 },
-  volumeSlider: { flex: 1, marginHorizontal: 10, height: 30 },
-  volumeLabel: {
-    width: 42,
-    textAlign: "right",
-    fontSize: 12,
-    color: "#333",
-    fontWeight: "600",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fefcf7",
-    padding: 16,
-  },
-  header: {
-    flexDirection: "row",
+  playerBody: {
+    padding: 20,
     alignItems: "center",
-    marginBottom: 12,
+    backgroundColor: "#fff",
   },
-  headerText: {
+  title: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 6,
+    textAlign: "center",
   },
-  card: {
+  desc: { fontSize: 13, color: "#666", textAlign: "center", marginBottom: 10 },
+  progressRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f1e8df",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-    cursor: "pointer",
+    width: "100%",
+    paddingHorizontal: 6,
   },
-  image: {
-    width: 40,
-    height: 40,
+  timeText: { width: 42, textAlign: "center", fontSize: 12, color: "#666" },
+  progressSlider: { flex: 1 },
+  controlsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 6,
+  },
+  iconButton: { padding: 12 },
+  playButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "#b98962",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 18,
+    shadowColor: "#b98962",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  bottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 12,
+    paddingHorizontal: 8,
+  },
+  volumeSlider: { flex: 1, marginHorizontal: 8 },
+  commentBtn: {
+    backgroundColor: "#fbf3ec",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+  },
+  commentText: { color: "#b66f3a", fontWeight: "600" },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    backgroundColor: "#fffdfb",
+    borderRadius: 12,
+  },
+  itemImage: {
+    width: 52,
+    height: 52,
     borderRadius: 8,
     marginRight: 12,
     backgroundColor: "#eee",
   },
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#555",
-  },
+  itemTitle: { fontSize: 15, fontWeight: "600", color: "#2a2a2a" },
+  itemSub: { fontSize: 13, color: "#666" },
 });

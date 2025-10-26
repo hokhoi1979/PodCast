@@ -22,12 +22,14 @@ import watchPostLetter from "./User/letter/postLetterSaga";
 import watchGetAllUserSaga from "./User/manageUser/getAllUser/getAllUserSaga";
 import watchBanUserSaga from "./User/manageUser/banUser/banUserSaga";
 import watchUnBanUserSaga from "./User/manageUser/unBanUser/unBanUserSaga";
+import watchGetPodcastIdSaga from "./User/fetchPodcastById/fetchPodcastByIdSaga";
 
 export default function* rootSaga() {
   yield all([
     watchLogin(),
     watchRegister(),
     watchGetAllPodcastSaga(),
+    watchGetPodcastIdSaga(),
     watchFetchCategorySaga(),
     watchFetchPodcastByCateSaga(),
     watchCategoryManagementSaga(),
