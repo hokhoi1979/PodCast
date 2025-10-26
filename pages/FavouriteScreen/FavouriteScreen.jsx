@@ -1,26 +1,28 @@
-import React, { useEffect, useRef, useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { Audio } from "expo-av";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   FlatList,
-  TouchableOpacity,
   Image,
   Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
-import Slider from "@react-native-community/slider";
-import { Audio } from "expo-av";
 
-import { getFavorite } from "../../redux/User/favourite/getFavorite/getFavoriteSlice";
 import { deleteFavorite } from "../../redux/User/favourite/deleteFavorite/deleteFavoriteSlice";
+import { getFavorite } from "../../redux/User/favourite/getFavorite/getFavoriteSlice";
 import { getPodcastId } from "../../redux/User/fetchPodcastById/fetchPodcastByIdSlice";
 
 export default function FavouriteScreen() {
   const dispatch = useDispatch();
+  const navigation = useNavigation();
   const { getFavo } = useSelector((state) => state.getFavorite);
   const { getPodId } = useSelector((state) => state.fetchPodcastById);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -35,6 +37,18 @@ export default function FavouriteScreen() {
   const [shouldPlay, setShouldPlay] = useState(false);
   const soundRef = useRef(null);
   const lastUpdateRef = useRef(0);
+
+  // Dừng audio khi screen mất focus (chuyển sang tab khác)
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Cleanup khi screen mất focus - chỉ dừng nếu đang phát
+        if (soundRef.current && isPlaying) {
+          soundRef.current.pauseAsync().catch(() => {});
+        }
+      };
+    }, [isPlaying])
+  );
 
   useEffect(() => {
     dispatch(getFavorite());
@@ -137,13 +151,14 @@ export default function FavouriteScreen() {
         Toast.show({
           type: "error",
           text1: "Không thể phát podcast",
+          text2: e.message,
         });
       } finally {
         setShouldPlay(false);
       }
     };
     play();
-  }, [getPodId]);
+  }, [shouldPlay, getPodId]);
 
   const handlePlayPause = async () => {
     if (!soundRef.current) return;
@@ -161,6 +176,14 @@ export default function FavouriteScreen() {
   const handleSeek = async (val) => {
     if (soundRef.current)
       await soundRef.current.setPositionAsync(Math.round(val * 1000));
+  };
+
+  const handleSeekStart = () => {
+    // Pause updates during seeking
+  };
+
+  const handleSeekChange = (val) => {
+    setPositionMillis(val * 1000);
   };
 
   const handleVolumeChange = async (val) => {
@@ -235,6 +258,8 @@ export default function FavouriteScreen() {
               minimumTrackTintColor="#f06f3a"
               maximumTrackTintColor="#eee"
               thumbTintColor="#f06f3a"
+              onSlidingStart={handleSeekStart}
+              onValueChange={handleSeekChange}
               onSlidingComplete={handleSeek}
               disabled={!getPodId?.audioUrl}
             />

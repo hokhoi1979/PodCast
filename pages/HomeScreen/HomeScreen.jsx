@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
+import { useFocusEffect } from "@react-navigation/native";
 import { Audio } from "expo-av";
 import { Image } from "expo-image";
 import { Heart, MessageCircle, Pause, Play } from "lucide-react-native";
@@ -179,6 +180,18 @@ export default function HomeScreen() {
     }
   }, [selectedCategory, dispatch]);
 
+  // Dừng audio khi screen mất focus (chuyển sang tab khác)
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Cleanup khi screen mất focus - chỉ dừng nếu đang phát
+        if (soundRef.current && isPlaying) {
+          soundRef.current.pauseAsync().catch(() => {});
+        }
+      };
+    }, [isPlaying])
+  );
+
   useEffect(() => {
     let mounted = true;
     const loadAndPlay = async () => {
@@ -250,7 +263,7 @@ export default function HomeScreen() {
     return () => {
       mounted = false;
     };
-  }, [selectedPodcast, autoPlay, isSeeking, playNext]);
+  }, [selectedPodcast, autoPlay, playNext]);
 
   useEffect(() => {
     return () => {
@@ -282,14 +295,17 @@ export default function HomeScreen() {
   };
 
   const handleSeekChange = (value) => {
-    setPosition(value);
+    // Convert seconds to milliseconds
+    setPosition(value * 1000);
   };
 
   const handleSeekComplete = async (value) => {
     setIsSeeking(false);
     if (soundRef.current) {
       try {
-        await soundRef.current.setPositionAsync(value);
+        // Convert seconds to milliseconds
+        const positionInMillis = value * 1000;
+        await soundRef.current.setPositionAsync(positionInMillis);
       } catch (_e) {}
     }
   };
@@ -523,8 +539,8 @@ export default function HomeScreen() {
                       <Slider
                         style={styles.seekSlider}
                         minimumValue={0}
-                        maximumValue={duration}
-                        value={position}
+                        maximumValue={duration / 1000}
+                        value={position / 1000}
                         onSlidingStart={handleSeekStart}
                         onValueChange={handleSeekChange}
                         onSlidingComplete={handleSeekComplete}

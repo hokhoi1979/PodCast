@@ -12,7 +12,7 @@ function* postPodcastSaga(action) {
   try {
     const token = yield call(AsyncStorage.getItem, "accessToken");
     const formData = action.payload;
-    const res = yield call(api.post, "/api/podcasts", formData, {
+    const res = yield call(api.post, "/api/podcasts/upload", formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data",

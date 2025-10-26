@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { RefreshControl } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllProduct } from "../../redux/User/fetchAllProduct/getAllProductSlice";
@@ -22,7 +23,7 @@ export default function StoreScreen() {
   const { product, loading, error } = useSelector(
     (state) => state.fetchProduct
   );
-
+  const [refreshing, setRefreshing] = useState(false);
   useEffect(() => {
     dispatch(getAllProduct({ page: 1, size: 10 }));
   }, [dispatch]);
@@ -71,9 +72,23 @@ export default function StoreScreen() {
 
     navigation.navigate("Checkout", { product: item });
   };
-
+  const onRefresh = async () => {
+    setRefreshing(true); // hiện spinner
+    await dispatch(getAllProduct({ page: 1, size: 100 }));
+    setRefreshing(false); // tắt spinner
+  };
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={["#f59e0b"]}
+          tintColor="#f59e0b"
+        />
+      }
+    >
       <Header />
 
       <Text style={styles.title}>Cửa hàng vòng tay</Text>

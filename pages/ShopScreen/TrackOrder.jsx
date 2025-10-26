@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   Truck,
 } from "lucide-react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useEffect, useState } from "react";
 import {
@@ -161,7 +160,7 @@ export default function TrackOrdersScreen({ route, navigation }) {
     );
 
   return (
-    <SafeAreaView>
+    <>
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -386,7 +385,7 @@ export default function TrackOrdersScreen({ route, navigation }) {
           productName={selectedProductForRating?.name}
         />
       </ScrollView>
-    </SafeAreaView>
+    </>
   );
 }
 

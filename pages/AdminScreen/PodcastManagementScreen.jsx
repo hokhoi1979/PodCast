@@ -305,7 +305,9 @@ export default function PodcastManagementScreen() {
 
   const getCategoryNames = (categoryIds) => {
     if (!categoryIds || categoryIds.length === 0) return "";
+    console.log("Getting names for categories:", categoryIds);
     return categoryIds
+
       .map((id) => {
         const cat = categories?.find((c) => c.id === id);
         return cat?.name || id;
@@ -316,6 +318,7 @@ export default function PodcastManagementScreen() {
   const submit = () => {
     if (!title?.trim() || !description?.trim()) {
       Toast.show({ type: "error", text1: "Nhập tiêu đề và mô tả" });
+
       return;
     }
 
