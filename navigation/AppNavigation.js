@@ -1,7 +1,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import React from "react";
 
 // Pages
 import FavouriteScreen from "../pages/FavouriteScreen/FavouriteScreen";
@@ -9,6 +8,9 @@ import HomeScreen from "../pages/HomeScreen/HomeScreen";
 import SignInScreen from "../pages/LoginScreen/SignInScreen";
 import SignUpScreen from "../pages/LoginScreen/SignUpScreen";
 import ProfileScreen from "../pages/ProfileScreen/ProfileScreen";
+import CartScreen from "../pages/ShopScreen/Cart";
+import CheckoutScreen from "../pages/ShopScreen/Checkout";
+import ProductDetailScreen from "../pages/ShopScreen/ProductDetailScreen";
 import ShopScreen from "../pages/ShopScreen/ShopScreen";
 
 // Custom TabBar
@@ -17,9 +19,14 @@ import AdminScreen from "../pages/AdminScreen/AdminScreen";
 import CategoryManagementScreen from "../pages/AdminScreen/CategoryManagementScreen";
 import PodcastManagementScreen from "../pages/AdminScreen/PodcastManagementScreen";
 import ProductManagementScreen from "../pages/AdminScreen/ProductManagementScreen";
-import ChatwithAIScreen from "../pages/ChatwithAI/ChatwitAIScreen";
-import LetterScreen from "../pages/Letter/LetterScreen";
 import UserManagementScreen from "../pages/AdminScreen/UserManagementScreen";
+import ChatwithAIScreen from "../pages/ChatwithAI/ChatwitAIScreen";
+import FlashcardNative from "../pages/FlashCard/FlashCard";
+import LetterScreen from "../pages/Letter/LetterScreen";
+import ChangePasswordScreen from "../pages/ProfileScreen/ChangePasswordScreen";
+import PaymentCancel from "../pages/ShopScreen/PaymentCancel";
+import PaymentSuccess from "../pages/ShopScreen/PaymentSuccess";
+import TrackOrdersScreen from "../pages/ShopScreen/TrackOrder";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -53,6 +60,22 @@ export default function AppNavigation() {
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="MainApp" component={MainTabNavigator} />
         <Stack.Screen name="Admin" component={AdminScreen} />
+        <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
+        <Stack.Screen
+          name="ProductDetail"
+          component={ProductDetailScreen}
+          options={{ title: "Chi tiết sản phẩm" }}
+        />
+        <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
+        <Stack.Screen name="PaymentCancel" component={PaymentCancel} />
+        <Stack.Screen name="TrackOrder" component={TrackOrdersScreen} />
+        <Stack.Screen
+          name="ChangePassword"
+          component={ChangePasswordScreen}
+          options={{ title: "Đổi mật khẩu" }}
+        />
+
         <Stack.Screen
           name="CategoryManagement"
           component={CategoryManagementScreen}
@@ -70,6 +93,11 @@ export default function AppNavigation() {
           name="Letter"
           component={LetterScreen}
           options={{ title: "Gửi Thư" }}
+        />
+        <Stack.Screen
+          name="FlashCard"
+          component={FlashcardNative}
+          options={{ title: "FlashCard" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

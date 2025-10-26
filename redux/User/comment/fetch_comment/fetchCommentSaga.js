@@ -15,10 +15,15 @@ function* getCommentsSaga(action) {
     const response = yield call(api.get, `/api/comments/podcast/${podcastId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     });
 
-    yield put(getCommentsSuccess(response.data));
+    if (response.status === 200) {
+      yield put(getCommentsSuccess(response.data));
+    } else {
+      yield put(getCommentsFailure(response.statusText));
+    }
   } catch (error) {
     console.error("Error fetching comments:", error);
     const errorMessage = error.response?.data?.message || error.message;

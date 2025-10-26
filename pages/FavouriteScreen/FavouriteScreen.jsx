@@ -36,17 +36,14 @@ export default function FavouriteScreen() {
   const soundRef = useRef(null);
   const lastUpdateRef = useRef(0);
 
-  // Load favorites
   useEffect(() => {
     dispatch(getFavorite());
   }, [dispatch]);
 
-  // Update list
   useEffect(() => {
     if (getFavo?.content) setFavourites(getFavo.content);
   }, [getFavo]);
 
-  // Cleanup audio
   useEffect(() => {
     return () => {
       if (soundRef.current) {
@@ -56,7 +53,6 @@ export default function FavouriteScreen() {
     };
   }, []);
 
-  // Handle select podcast
   const handleSelectPodcast = async (item) => {
     try {
       if (soundRef.current) {
@@ -100,7 +96,6 @@ export default function FavouriteScreen() {
     }
   };
 
-  // When getPodId updated → play audio
   useEffect(() => {
     const play = async () => {
       if (!shouldPlay || !getPodId?.audioUrl) return;
@@ -123,7 +118,6 @@ export default function FavouriteScreen() {
             if (!status?.isLoaded) return;
 
             const now = Date.now();
-            // chỉ update mỗi 500ms
             if (now - lastUpdateRef.current > 500) {
               lastUpdateRef.current = now;
 
@@ -151,7 +145,6 @@ export default function FavouriteScreen() {
     play();
   }, [getPodId]);
 
-  // Play / pause
   const handlePlayPause = async () => {
     if (!soundRef.current) return;
     const status = await soundRef.current.getStatusAsync();
@@ -203,7 +196,6 @@ export default function FavouriteScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Ionicons
           name="heart"
@@ -214,7 +206,6 @@ export default function FavouriteScreen() {
         <Text style={styles.headerText}>Yêu thích</Text>
       </View>
 
-      {/* Player */}
       <View style={styles.cardPlayer}>
         <Image
           source={{
@@ -232,7 +223,6 @@ export default function FavouriteScreen() {
             {getPodId?.description || "Hãy chọn một podcast yêu thích bên dưới"}
           </Text>
 
-          {/* Progress */}
           <View style={styles.progressRow}>
             <Text style={styles.timeText}>{formatTime(positionMillis)}</Text>
             <Slider
@@ -251,7 +241,6 @@ export default function FavouriteScreen() {
             <Text style={styles.timeText}>{formatTime(durationMillis)}</Text>
           </View>
 
-          {/* Controls */}
           <View style={styles.controlsRow}>
             <TouchableOpacity style={styles.iconButton} onPress={handlePrev}>
               <Ionicons name="play-skip-back" size={24} color="#666" />
@@ -274,7 +263,6 @@ export default function FavouriteScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Volume + comment */}
           <View style={styles.bottomRow}>
             <TouchableOpacity onPress={toggleMute} style={{ padding: 6 }}>
               <Ionicons
@@ -303,7 +291,6 @@ export default function FavouriteScreen() {
         </View>
       </View>
 
-      {/* List */}
       <FlatList
         data={favourites}
         keyExtractor={(it) => `${it.id}`}

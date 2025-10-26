@@ -124,7 +124,7 @@ export default function CategoryManagementScreen() {
       {/* Categories List */}
       <FlatList
         data={categories}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
         renderItem={renderCategoryItem}
         contentContainerStyle={styles.listContainer}
         refreshing={loading}
