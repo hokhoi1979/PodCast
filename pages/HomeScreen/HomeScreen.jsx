@@ -19,8 +19,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
 
+import { deleteComment } from "../../redux/User/comment/delete_comment/deleteCommentSlice.js";
 import { getComments } from "../../redux/User/comment/fetch_comment/fetchCommentSlice.js";
-import { postComment } from "../../redux/User/comment/post_comment/postCommentSilce.js";
+import {
+  postComment,
+  resetPostComment,
+} from "../../redux/User/comment/post_comment/postCommentSilce.js";
+import { updateComment } from "../../redux/User/comment/update_comment/updateCommentSlice.js";
 import { deleteFavorite } from "../../redux/User/favourite/deleteFavorite/deleteFavoriteSlice.js";
 import { getFavorite } from "../../redux/User/favourite/getFavorite/getFavoriteSlice.js";
 import { postFavorite } from "../../redux/User/favourite/postFavortie/postFavoriteSlice.js";
@@ -48,6 +53,8 @@ export default function HomeScreen() {
   // Comment Modal States
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editContent, setEditContent] = useState("");
 
   const dispatch = useDispatch();
   const { podcasts, loading, selectedPodcast, autoPlay } = useSelector(
@@ -64,6 +71,13 @@ export default function HomeScreen() {
     (state) => state.getComments
   );
   const { success: commentSuccess } = useSelector((state) => state.postComment);
+  const { success: updateSuccess } = useSelector(
+    (state) => state.updateComment
+  );
+  const { success: deleteSuccess } = useSelector(
+    (state) => state.deleteComment
+  );
+  const { user } = useSelector((state) => state.auth);
 
   const apiCategories = categories?.map((cat) => cat.name) || [];
   const sortedCategories = ["All", ...apiCategories];
@@ -85,17 +99,38 @@ export default function HomeScreen() {
     if (showCommentModal && selectedPodcast?.id) {
       dispatch(getComments(selectedPodcast.id));
     }
-  }, [showCommentModal, selectedPodcast?.id]);
+  }, [showCommentModal, selectedPodcast?.id, dispatch]);
 
   // Reset comment form khi thành công
   useEffect(() => {
     if (commentSuccess) {
       setCommentText("");
+      dispatch(resetPostComment());
       if (selectedPodcast?.id) {
         dispatch(getComments(selectedPodcast.id));
       }
     }
-  }, [commentSuccess]);
+  }, [commentSuccess, dispatch, selectedPodcast?.id]);
+
+  // Xử lý khi update comment thành công
+  useEffect(() => {
+    if (updateSuccess) {
+      setEditingCommentId(null);
+      setEditContent("");
+      if (selectedPodcast?.id) {
+        dispatch(getComments(selectedPodcast.id));
+      }
+    }
+  }, [updateSuccess, dispatch, selectedPodcast?.id]);
+
+  // Xử lý khi delete comment thành công
+  useEffect(() => {
+    if (deleteSuccess) {
+      if (selectedPodcast?.id) {
+        dispatch(getComments(selectedPodcast.id));
+      }
+    }
+  }, [deleteSuccess, dispatch, selectedPodcast?.id]);
 
   useEffect(() => {
     if (selectedPodcast && filtered) {
@@ -281,19 +316,90 @@ export default function HomeScreen() {
 
   const handleSubmitComment = () => {
     if (!commentText.trim()) {
-      Toast.show({ type: "error", text1: "Vui lòng nhập bình luận" });
+      Toast.show({ type: "error", text1: "⚠ Bình luận không được để trống!" });
       return;
     }
     if (!selectedPodcast?.id) {
-      Toast.show({ type: "error", text1: "Không tìm thấy podcast" });
+      Toast.show({ type: "error", text1: "⚠ Không tìm thấy podcast" });
       return;
     }
+    if (!user) {
+      Toast.show({
+        type: "error",
+        text1: "⚠ Vui lòng đăng nhập để bình luận!",
+      });
+      return;
+    }
+
     dispatch(
       postComment({
         podcastId: selectedPodcast.id,
+        commentUser: user.username || "Ẩn danh",
         content: commentText.trim(),
       })
     );
+  };
+
+  // Handle edit comment
+  const handleEditComment = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditContent(comment.content);
+  };
+
+  // Handle update comment
+  const handleUpdateComment = () => {
+    if (!editContent.trim()) {
+      Toast.show({ type: "error", text1: "⚠ Bình luận không được để trống!" });
+      return;
+    }
+    if (!user) {
+      Toast.show({
+        type: "error",
+        text1: "⚠ Vui lòng đăng nhập để thực hiện thao tác này!",
+      });
+      return;
+    }
+
+    dispatch(
+      updateComment({
+        commentId: editingCommentId,
+        podcastId: selectedPodcast.id,
+        commentUser: user.username || "Ẩn danh",
+        content: editContent.trim(),
+      })
+    );
+
+    // Reset edit state
+    setEditingCommentId(null);
+    setEditContent("");
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditContent("");
+  };
+
+  // Handle delete comment
+  const handleDeleteComment = (comment) => {
+    // Kiểm tra quyền xóa - chỉ người comment mới xóa được
+    if (!user) {
+      Toast.show({
+        type: "error",
+        text1: "⚠ Vui lòng đăng nhập để thực hiện thao tác này!",
+      });
+      return;
+    }
+
+    if (comment.commentUser !== user.username) {
+      Toast.show({
+        type: "error",
+        text1: "⚠ Bạn chỉ có thể xóa bình luận của chính mình!",
+      });
+      return;
+    }
+
+    dispatch(deleteComment({ id: comment.id }));
   };
 
   return (
@@ -559,10 +665,76 @@ export default function HomeScreen() {
               ) : comments?.length > 0 ? (
                 comments.map((comment, index) => (
                   <View key={index} style={styles.commentItem}>
-                    <Text style={styles.commentUser}>
-                      {comment.user?.username || "Ẩn danh"}
-                    </Text>
-                    <Text style={styles.commentContent}>{comment.content}</Text>
+                    <View style={styles.commentHeader}>
+                      <Text style={styles.commentUser}>
+                        {comment.commentUser || "Ẩn danh"}
+                      </Text>
+                      <View style={styles.commentActions}>
+                        <Text style={styles.commentTime}>
+                          {comment.createdAt
+                            ? new Date(comment.createdAt).toLocaleString(
+                                "vi-VN"
+                              )
+                            : ""}
+                        </Text>
+                        {/* Chỉ hiển thị nút Edit/Delete nếu user đã đăng nhập và là chủ sở hữu comment */}
+                        {user && comment.commentUser === user.username && (
+                          <View style={styles.commentButtons}>
+                            <TouchableOpacity
+                              style={styles.editButton}
+                              onPress={() => handleEditComment(comment)}
+                            >
+                              <Ionicons
+                                name="pencil"
+                                size={16}
+                                color="#946f4a"
+                              />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={styles.deleteButton}
+                              onPress={() => handleDeleteComment(comment)}
+                            >
+                              <Ionicons
+                                name="trash"
+                                size={16}
+                                color="#ff4444"
+                              />
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Hiển thị nội dung comment hoặc form edit */}
+                    {editingCommentId === comment.id ? (
+                      <View style={styles.editCommentWrapper}>
+                        <TextInput
+                          style={styles.editCommentInput}
+                          placeholder="Chỉnh sửa bình luận..."
+                          value={editContent}
+                          onChangeText={setEditContent}
+                          multiline
+                        />
+                        <View style={styles.editButtonWrapper}>
+                          <TouchableOpacity
+                            style={styles.saveEditButton}
+                            onPress={handleUpdateComment}
+                          >
+                            <Text style={styles.saveEditButtonText}>Lưu</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.cancelEditButton}
+                            onPress={handleCancelEdit}
+                          >
+                            <Text style={styles.cancelEditButtonText}>Hủy</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <Text style={styles.commentContent}>
+                        {comment.content}
+                      </Text>
+                    )}
                   </View>
                 ))
               ) : (
@@ -840,4 +1012,73 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 15, color: "#999", textAlign: "center" },
   categoryLoadingContainer: { paddingHorizontal: 16, paddingVertical: 8 },
   categoryLoadingText: { fontSize: 14, color: "#999" },
+
+  // Comment styles
+  commentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  commentActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  commentTime: {
+    fontSize: 12,
+    color: "#999",
+  },
+  commentButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  editButton: {
+    padding: 4,
+  },
+  deleteButton: {
+    padding: 4,
+  },
+
+  // Edit comment styles
+  editCommentWrapper: {
+    marginTop: 8,
+  },
+  editCommentInput: {
+    backgroundColor: "#F5F5F0",
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: "top",
+    marginBottom: 12,
+  },
+  editButtonWrapper: {
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "flex-end",
+  },
+  saveEditButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: "#946f4a",
+  },
+  saveEditButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelEditButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  cancelEditButtonText: {
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "500",
+  },
 });

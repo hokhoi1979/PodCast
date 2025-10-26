@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     backgroundColor: "#fff",
   },
   leftSide: {
@@ -71,13 +71,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: {
-    width: 50,
+    width: 30,
     height: 30,
     borderRadius: 4,
-    marginRight: 8,
+    marginRight: 6,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#604B3B",
   },

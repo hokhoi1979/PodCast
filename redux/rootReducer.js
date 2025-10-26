@@ -14,8 +14,10 @@ import postFlashCardReducer from "./Flashcard/flashCardSlice";
 import cancelPaymentReducer from "./User/cancelPayment/cancelPaymentSlice";
 import changePasswordReducer from "./User/changePassword/changePasswordSlice";
 import checkoutCartReducer from "./User/checkoutCart/checkoutCartSlice";
+import deleteCommentReducer from "./User/comment/delete_comment/deleteCommentSlice";
 import getCommentsReducer from "./User/comment/fetch_comment/fetchCommentSlice";
 import postCommentReducer from "./User/comment/post_comment/postCommentSilce";
+import updateCommentReducer from "./User/comment/update_comment/updateCommentSlice";
 import createCommentReducer from "./User/comment_rating/create_comment/createCommentSlice";
 import fetchAllCommentByProductReducer from "./User/comment_rating/fetchCommentByProduct/fetchCommentByProductSlice";
 import fetchAllCommentByUserReducer from "./User/comment_rating/fetchCommentByUser/fetchCommentByUserSlice";
@@ -98,6 +100,8 @@ const rootReducer = combineReducers({
   //comment
   getComments: getCommentsReducer, // NEW
   postComment: postCommentReducer, // NEW
+  updateComment: updateCommentReducer,
+  deleteComment: deleteCommentReducer,
   postLetter: postLetterReducer,
   chatAI: postChatReducer,
   postFlashCard: postFlashCardReducer,
