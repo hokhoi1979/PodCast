@@ -10,7 +10,6 @@ import {
 
 function* createPayosSaga(action) {
   try {
-    console.log("🔹 PayOS Saga triggered with orderId:", action.payload);
     const token = yield call(AsyncStorage.getItem, "accessToken");
     const orderId = action.payload;
 
@@ -23,8 +22,6 @@ function* createPayosSaga(action) {
       }
     );
 
-    console.log("🔹 PayOS response:", response.data);
-
     if (response.status === 200 && response.data?.error === 0) {
       const payosData = response.data.data;
       yield put(createPayosSuccess(payosData));
@@ -32,7 +29,6 @@ function* createPayosSaga(action) {
       yield put(createPayosFailure("Không nhận được URL từ PayOS"));
     }
   } catch (error) {
-    console.log("❌ PayOS error:", error);
     yield put(
       createPayosFailure(error.message || "Không nhận được URL từ PayOS")
     );

@@ -33,7 +33,6 @@ function* getAllProductSaga(action) {
     yield put(
       getAllProductFail(error.response?.data?.message || error.message)
     );
-    console.log(error.response?.data?.message || error.message);
   }
 }
 function* watchGetAllProduct() {
