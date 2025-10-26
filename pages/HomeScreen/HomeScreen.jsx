@@ -80,8 +80,6 @@ export default function HomeScreen() {
         )
       : displayPodcasts;
 
-  console.log("DUC", podcasts);
-
   // Fetch comments khi mở modal
   useEffect(() => {
     if (showCommentModal && selectedPodcast?.id) {

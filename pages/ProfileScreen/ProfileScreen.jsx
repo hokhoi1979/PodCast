@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LogOut } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Lock, LogOut, Package, Phone, User } from "lucide-react-native";
 import { useEffect } from "react";
 import {
   ActivityIndicator,
@@ -22,9 +23,7 @@ export default function ProfileScreen({ navigation }) {
   const userId = useSelector((state) => state.auth?.user?.id);
 
   useEffect(() => {
-    if (userId) {
-      dispatch(getProfile(userId));
-    }
+    if (userId) dispatch(getProfile(userId));
   }, [dispatch, userId]);
 
   const handleLogout = () => {
@@ -39,7 +38,7 @@ export default function ProfileScreen({ navigation }) {
             dispatch(logout());
             Toast.show({ type: "success", text1: "Đăng xuất thành công!" });
             navigation.replace("SignIn");
-          } catch (error) {
+          } catch {
             Toast.show({ type: "error", text1: "Đăng xuất thất bại!" });
           }
         },
@@ -47,69 +46,104 @@ export default function ProfileScreen({ navigation }) {
     ]);
   };
 
-  const handleTrackOrder = () => {
-    navigation.navigate("TrackOrder", { userId });
-  };
-
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Image
-          source={{
-            uri: "https://static.vecteezy.com/system/resources/thumbnails/017/800/528/small_2x/user-simple-flat-icon-illustration-vector.jpg",
-          }}
-          style={styles.avatar}
-        />
+      <LinearGradient
+        colors={["#A1887F", "#D7CCC8", "#EFEBE9"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
+        <View style={styles.avatarContainer}>
+          <Image
+            source={{
+              uri:
+                profile?.avatar ||
+                "https://cdn-icons-png.flaticon.com/512/3177/3177440.png",
+            }}
+            style={styles.avatar}
+          />
+        </View>
         <Text style={styles.name}>{profile?.fullName || "Người dùng"}</Text>
-        <Text style={styles.email}>{profile?.email}</Text>
-      </View>
+        <Text style={styles.email}>
+          {profile?.email || "Chưa cập nhật email"}
+        </Text>
+      </LinearGradient>
 
-      {/* Thông tin */}
       <View style={styles.infoCard}>
         {loading ? (
-          <ActivityIndicator size="large" color="#8B4513" />
+          <ActivityIndicator size="large" color="#6A5ACD" />
         ) : error ? (
           <Text style={styles.errorText}>Lỗi tải dữ liệu: {error}</Text>
-        ) : profile && profile.id ? (
+        ) : (
           <>
-            <InfoItem label="Mã người dùng" value={profile.id} />
-            <InfoItem label="Tên đăng nhập" value={profile.username} />
             <InfoItem
-              label="Số điện thoại"
-              value={profile.phoneNumber || "Chưa cập nhật"}
+              icon={<User size={18} color="#5D4037" />}
+              label="Tên đăng nhập"
+              value={profile?.username}
             />
             <InfoItem
+              icon={<Phone size={18} color="#5D4037" />}
+              label="Số điện thoại"
+              value={profile?.phoneNumber || "Chưa cập nhật"}
+            />
+            <InfoItem
+              icon={<Lock size={18} color="#5D4037" />}
               label="Trạng thái"
-              value={profile.active ? "Hoạt động" : "Bị khóa"}
-              color={profile.active ? "#2E8B57" : "#E53E3E"}
+              value={profile?.active ? "Hoạt động" : "Bị khóa"}
+              color={profile?.active ? "#2E8B57" : "#E53E3E"}
             />
           </>
-        ) : (
-          <Text style={styles.errorText}>
-            Không tìm thấy dữ liệu người dùng.
-          </Text>
         )}
       </View>
 
-      {/* Nút hành động */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.trackBtn} onPress={handleTrackOrder}>
-          <Text style={styles.trackText}>Theo dõi đơn hàng</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <LogOut size={18} color="#fff" />
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </TouchableOpacity>
+        <GradientButton
+          colors={["#FFA726", "#FB8C00"]}
+          icon={<Package size={18} color="#fff" />}
+          text="Theo dõi đơn hàng"
+          onPress={() => navigation.navigate("TrackOrder", { userId })}
+        />
+        <GradientButton
+          colors={["#64B5F6", "#2196F3"]}
+          icon={<Lock size={18} color="#fff" />}
+          text="Đổi mật khẩu"
+          onPress={() => navigation.navigate("ChangePassword")}
+        />
+        <GradientButton
+          colors={["#E57373", "#D32F2F"]}
+          icon={<LogOut size={18} color="#fff" />}
+          text="Đăng xuất"
+          onPress={handleLogout}
+        />
       </View>
     </ScrollView>
   );
 }
 
-const InfoItem = ({ label, value, color = "#333" }) => (
+const GradientButton = ({ colors, icon, text, onPress }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    style={{ width: "80%", marginBottom: 12 }}
+  >
+    <LinearGradient
+      colors={colors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientBtn}
+    >
+      {icon}
+      <Text style={styles.btnText}>{text}</Text>
+    </LinearGradient>
+  </TouchableOpacity>
+);
+
+const InfoItem = ({ icon, label, value, color = "#333" }) => (
   <View style={styles.infoItem}>
-    <Text style={styles.label}>{label}</Text>
+    <View style={styles.infoLeft}>
+      {icon}
+      <Text style={styles.label}>{label}</Text>
+    </View>
     <Text style={[styles.value, { color }]}>{value}</Text>
   </View>
 );
@@ -117,92 +151,75 @@ const InfoItem = ({ label, value, color = "#333" }) => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FB",
+    backgroundColor: "#EFEBE9",
   },
   header: {
     alignItems: "center",
-    paddingVertical: 40,
-    backgroundColor: "#fff",
-    marginBottom: 10,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 2,
+    paddingVertical: 50,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    marginBottom: 25,
+  },
+  avatarContainer: {
+    marginBottom: 15,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 12,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "#fff",
   },
   name: {
     fontSize: 22,
-    fontWeight: "700",
-    color: "#2F2F2F",
+    fontWeight: "800",
+    color: "#3E2723",
   },
   email: {
     fontSize: 14,
-    color: "#888",
-    marginTop: 4,
+    color: "#5D4037",
+    marginTop: 6,
   },
   infoCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FAF3E0",
     marginHorizontal: 20,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 2,
   },
   infoItem: {
-    borderBottomColor: "#eee",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomColor: "rgba(0,0,0,0.05)",
     borderBottomWidth: 1,
-    paddingVertical: 10,
+  },
+  infoLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   label: {
-    fontSize: 14,
-    color: "#888",
+    fontSize: 15,
+    color: "#4E342E",
   },
   value: {
     fontSize: 16,
     fontWeight: "600",
-    marginTop: 2,
   },
   actions: {
     alignItems: "center",
-    marginTop: 25,
+    marginTop: 20,
     paddingBottom: 50,
   },
-  trackBtn: {
-    backgroundColor: "#FFB703",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    width: "80%",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  trackText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  logoutBtn: {
-    backgroundColor: "#E63946",
+  gradientBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 12,
-    width: "80%",
-    gap: 6,
+    borderRadius: 16,
+    gap: 8,
   },
-  logoutText: {
+  btnText: {
     color: "#fff",
     fontWeight: "700",
     fontSize: 16,
