@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
 import LottieView from "lottie-react-native";
-import { LockKeyhole, Mail } from "lucide-react-native";
+import { LockKeyhole, User } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
@@ -16,21 +16,21 @@ import { FETCH_API_LOGIN } from "../../redux/auth/loginSlice";
 export default function SignInScreen({ navigation }) {
   const dispatch = useDispatch();
   const { loading, error, user } = useSelector((state) => state.auth);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSignIn = () => {
-    if (!email || !password) {
+    if (!username || !password) {
       Toast.show({
         type: "error",
-        text1: "Please fill in all fields",
+        text1: "Vui lòng điền đầy đủ thông tin",
       });
       return;
     }
 
     dispatch({
       type: FETCH_API_LOGIN,
-      payload: { username: email, passwordHash: password },
+      payload: { username: username, passwordHash: password },
     });
   };
 
@@ -69,14 +69,13 @@ export default function SignInScreen({ navigation }) {
       <View style={styles.form}>
         <View style={styles.inputContainer}>
           <Text style={styles.inputIcon}>
-            <Mail />
+            <User />
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="Email Address"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
+            placeholder="Tên đăng nhập"
+            value={username}
+            onChangeText={setUsername}
             placeholderTextColor="#9ca3af"
           />
         </View>
@@ -101,23 +100,23 @@ export default function SignInScreen({ navigation }) {
           disabled={loading}
         >
           <Text style={styles.signUpText}>
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </Text>
         </TouchableOpacity>
 
         <View style={{ alignItems: "center" }}>
           <Text style={{ marginVertical: 10, fontSize: 14, color: "#888" }}>
-            Or
+            Hoặc
           </Text>
         </View>
         <View style={{ flex: 1, alignItems: "center" }}>
           <Text style={styles.footerText}>
-            Don't have an account?{" "}
+            Chưa có tài khoản?{" "}
             <Text
               style={styles.linkText}
               onPress={() => navigation.navigate("SignUp")}
             >
-              Sign Up
+              Đăng ký
             </Text>
           </Text>
         </View>

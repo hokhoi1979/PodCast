@@ -1,6 +1,6 @@
-import React from "react";
-import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
   return (
@@ -64,7 +64,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
         if (route.name === "Profile")
           icon = (
             <Ionicons
-              name="person"
+              name="person-outline"
               size={24}
               color={isFocused ? "#946f4a" : "#9a9a9a"}
             />

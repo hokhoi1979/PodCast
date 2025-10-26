@@ -3,11 +3,12 @@ import Slider from "@react-native-community/slider";
 import { Audio } from "expo-av";
 import { Image } from "expo-image";
 import { Heart, MessageCircle, Pause, Play } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -55,6 +56,7 @@ export default function HomeScreen() {
   const [commentText, setCommentText] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editContent, setEditContent] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   const dispatch = useDispatch();
   const { podcasts, loading, selectedPodcast, autoPlay } = useSelector(
@@ -139,20 +141,20 @@ export default function HomeScreen() {
     }
   }, [selectedPodcast, filtered]);
 
-  const playNext = () => {
+  const playNext = useCallback(() => {
     if (!filtered || filtered.length === 0) return;
     const nextIndex = (currentIndex + 1) % filtered.length;
     dispatch(selectPodcast(filtered[nextIndex], true));
     setDescExpanded(false);
-  };
+  }, [filtered, currentIndex, dispatch]);
 
-  const playPrevious = () => {
+  const playPrevious = useCallback(() => {
     if (!filtered || filtered.length === 0) return;
     const prevIndex =
       currentIndex === 0 ? filtered.length - 1 : currentIndex - 1;
     dispatch(selectPodcast(filtered[prevIndex], true));
     setDescExpanded(false);
-  };
+  }, [filtered, currentIndex, dispatch]);
 
   useEffect(() => {
     dispatch(getFavorite());
@@ -239,7 +241,7 @@ export default function HomeScreen() {
         soundRef.current = sound;
         await sound.setVolumeAsync(1);
         setIsPlaying(!!autoPlay);
-      } catch (e) {
+      } catch (_e) {
         setIsPlaying(false);
       }
     };
@@ -248,7 +250,7 @@ export default function HomeScreen() {
     return () => {
       mounted = false;
     };
-  }, [selectedPodcast, autoPlay]);
+  }, [selectedPodcast, autoPlay, isSeeking, playNext]);
 
   useEffect(() => {
     return () => {
@@ -272,7 +274,7 @@ export default function HomeScreen() {
         await sound.playAsync();
         setIsPlaying(true);
       }
-    } catch (e) {}
+    } catch (_e) {}
   };
 
   const handleSeekStart = () => {
@@ -288,7 +290,7 @@ export default function HomeScreen() {
     if (soundRef.current) {
       try {
         await soundRef.current.setPositionAsync(value);
-      } catch (e) {}
+      } catch (_e) {}
     }
   };
 
@@ -402,6 +404,38 @@ export default function HomeScreen() {
     dispatch(deleteComment({ id: comment.id }));
   };
 
+  // Pull to refresh function
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Refresh categories
+      dispatch(fetchAllCategory());
+
+      // Refresh podcasts based on current category
+      if (selectedCategory === "All") {
+        dispatch(fetchAllPodcast());
+      } else {
+        dispatch(fetchAllPodcastByCate({ categoryName: selectedCategory }));
+      }
+
+      // Refresh favorites
+      dispatch(getFavorite());
+
+      // Show success message
+      Toast.show({
+        type: "success",
+        text2: "Danh sách podcast đã được cập nhật",
+      });
+    } catch (_error) {
+      Toast.show({
+        type: "error",
+        text2: "Vui lòng thử lại sau",
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <>
       <ScrollView
@@ -409,6 +443,16 @@ export default function HomeScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#946f4a"]} // Android
+            tintColor="#946f4a" // iOS
+            title="Đang làm mới..." // iOS
+            titleColor="#946f4a" // iOS
+          />
+        }
       >
         <SafeAreaView>
           <Header />
