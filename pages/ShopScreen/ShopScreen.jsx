@@ -50,10 +50,14 @@ export default function StoreScreen() {
       })
     );
 
-    Toast.show({
-      type: "success",
-      text1: "Đã thêm sản phẩm vào giỏ hàng 🎉",
-    });
+    // Toast.show({
+    //   type: "success",
+    //   text1: "Đã thêm sản phẩm vào giỏ hàng 🎉",
+    // });
+  };
+
+  const handleImagePress = (item) => {
+    navigation.navigate("ProductDetail", { productId: item.id });
   };
 
   const handleBuyNow = (item) => {
@@ -81,11 +85,13 @@ export default function StoreScreen() {
         {product?.map((item) => (
           <View key={item.id} style={styles.card}>
             <View>
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={styles.image}
-                resizeMode="cover"
-              />
+              <TouchableOpacity onPress={() => handleImagePress(item)}>
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
               <Text style={styles.productName} numberOfLines={1}>
                 {item.name}
               </Text>
@@ -102,19 +108,17 @@ export default function StoreScreen() {
                 <Text style={styles.buttonText}>Thêm vào giỏ</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 onPress={() => handleBuyNow(item)}
                 style={[styles.button, styles.buyButton]}
                 activeOpacity={0.8}
               >
                 <Text style={styles.buttonText}>Mua ngay</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View>
         ))}
       </View>
-
-      <Toast />
     </ScrollView>
   );
 }

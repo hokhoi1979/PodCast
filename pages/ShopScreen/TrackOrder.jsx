@@ -23,13 +23,20 @@ import {
 } from "react-native";
 
 import { useDispatch, useSelector } from "react-redux";
+import { fetchAllCommentByUser } from "../../redux/User/comment_rating/fetchCommentByUser/fetchCommentByUserSlice";
 import { getOrderUser } from "../../redux/User/fetchOrderByUser/getAllOrderByUserSlice";
 import { updateStatusOrder } from "../../redux/User/updateStatusOrder/updateStatusOrderSlice";
+import RatingModal from "./RatingModal";
 
 export default function TrackOrdersScreen({ route, navigation }) {
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedProductForRating, setSelectedProductForRating] =
+    useState(null);
+
   const { orderUser, loading, error } = useSelector((state) => state.orderUser);
+  const { fetchCommentUser } = useSelector((state) => state.fetchCommentByUser);
 
   // 🔹 Lấy userId từ route.params
   const { userId } = route.params;
@@ -43,18 +50,19 @@ export default function TrackOrdersScreen({ route, navigation }) {
   };
 
   useEffect(() => {
-    console.log("➡ TrackOrdersScreen userId from route:", route.params?.userId);
     if (route.params?.userId) {
       dispatch(
         getOrderUser({ userId: route.params.userId, page: 1, size: 200 })
       );
+      // Fetch comments của user
+      dispatch(fetchAllCommentByUser(route.params.userId));
     }
   }, [dispatch, route.params?.userId]);
 
-  useEffect(() => {
-    console.log("⬅ orderUser redux state:", orderUser);
-  }, [orderUser]);
-  console.log("Orders to display:", orders);
+  // Debug order data
+  useEffect(() => {}, [orderUser, orders, selected]);
+
+  useEffect(() => {}, [fetchCommentUser]);
 
   const orders = (orderUser?.content || orderUser || []).filter((order) =>
     [
@@ -97,9 +105,27 @@ export default function TrackOrdersScreen({ route, navigation }) {
     await dispatch(
       updateStatusOrder({ id: orderId, status: "RECEIVED", userId })
     );
-    console("id", orderId);
     dispatch(getOrderUser({ userId, page: 1, size: 40 }));
     Alert.alert("✅ Thành công", "Đơn hàng đã được xác nhận là đã nhận hàng.");
+  };
+
+  const handleRateProduct = (product) => {
+    setSelectedProductForRating(product);
+    setShowRatingModal(true);
+  };
+
+  const handleCloseRatingModal = () => {
+    setShowRatingModal(false);
+    setSelectedProductForRating(null);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Không có thông tin";
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   if (loading)
@@ -163,6 +189,25 @@ export default function TrackOrdersScreen({ route, navigation }) {
 
       <Text style={styles.title}>Theo dõi đơn hàng</Text>
 
+      {/* Nút refresh comment để test */}
+      <TouchableOpacity
+        style={{
+          backgroundColor: "#6366f1",
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+          borderRadius: 8,
+          alignSelf: "center",
+          marginBottom: 16,
+        }}
+        onPress={() => {
+          dispatch(fetchAllCommentByUser(userId));
+        }}
+      >
+        <Text style={{ color: "#fff", fontWeight: "600" }}>
+          🔄 Refresh Comments
+        </Text>
+      </TouchableOpacity>
+
       {/* Danh sách đơn hàng */}
       <View style={styles.orderListContainer}>
         <FlatList
@@ -203,26 +248,47 @@ export default function TrackOrdersScreen({ route, navigation }) {
             ? new Date(selected.createdAt).toLocaleString("vi-VN")
             : ""}
         </Text>
+        <View style={styles.addressBox}>
+          <Text style={styles.addressLabel}>📍 Địa chỉ nhận hàng</Text>
+          <Text style={styles.addressText}>
+            {selected.address || "Không có địa chỉ"}
+          </Text>
+        </View>
 
-        {selected.items?.map((item) => (
-          <View key={item.id} style={styles.itemCard}>
-            <Image
-              source={{
-                uri: item.product?.imageUrl || "https://placehold.co/100",
-              }}
-              style={styles.itemImage}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.itemName}>
-                {item.product?.name || "Sản phẩm không xác định"}
-              </Text>
-              <Text style={styles.itemQuantity}>Số lượng: {item.quantity}</Text>
-              <Text style={styles.itemPrice}>
-                {item.price?.toLocaleString("vi-VN") || 0}₫
-              </Text>
+        {selected.items?.map((item) => {
+          return (
+            <View key={item.id} style={styles.itemCard}>
+              <Image
+                source={{
+                  uri: item.product?.imageUrl || "https://placehold.co/100",
+                }}
+                style={styles.itemImage}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemName}>
+                  {item.product?.name || "Sản phẩm không xác định"}
+                </Text>
+                <Text style={styles.itemQuantity}>
+                  Số lượng: {item.quantity}
+                </Text>
+                <Text style={styles.itemPrice}>
+                  {item.price?.toLocaleString("vi-VN") || 0}₫
+                </Text>
+
+                {/* Nút đánh giá sản phẩm */}
+                {(selected.status?.toLowerCase() === "completed" ||
+                  selected.status?.toLowerCase() === "received") && (
+                  <TouchableOpacity
+                    style={styles.rateBtn}
+                    onPress={() => handleRateProduct(item.product)}
+                  >
+                    <Text style={styles.rateBtnText}>⭐ Đánh giá sản phẩm</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
 
         {/* Nút xác nhận */}
         {selected.status?.toUpperCase() === "DELIVERED" && (
@@ -274,6 +340,46 @@ export default function TrackOrdersScreen({ route, navigation }) {
           );
         })}
       </View>
+
+      {/* Danh sách đánh giá của user */}
+
+      {fetchCommentUser && fetchCommentUser.length > 0 && (
+        <View style={styles.commentsContainer}>
+          <Text style={styles.commentsTitle}>Đánh giá của bạn</Text>
+          {fetchCommentUser.map((comment) => (
+            <View key={comment.id} style={styles.commentCard}>
+              <View style={styles.commentHeader}>
+                <Text style={styles.commentProductName}>
+                  {comment.product?.name || "Sản phẩm không xác định"}
+                </Text>
+                <Text style={styles.commentDate}>
+                  {formatDate(comment.dateCreated)}
+                </Text>
+              </View>
+
+              <View style={styles.commentRating}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Text key={star} style={styles.star}>
+                    {star <= comment.star ? "⭐" : "☆"}
+                  </Text>
+                ))}
+                <Text style={styles.ratingText}>{comment.star}/5</Text>
+              </View>
+
+              <Text style={styles.commentText}>{comment.comment}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Rating Modal */}
+      <RatingModal
+        visible={showRatingModal}
+        onClose={handleCloseRatingModal}
+        productId={selectedProductForRating?.id}
+        userId={userId}
+        productName={selectedProductForRating?.name}
+      />
     </ScrollView>
   );
 }
@@ -362,4 +468,91 @@ const styles = StyleSheet.create({
   stepPending: { backgroundColor: "#e5e7eb" },
   stepText: { marginLeft: 10, fontWeight: "600", color: "#374151" },
   emptyText: { color: "#6b7280", marginTop: 8 },
+  addressBox: {
+    backgroundColor: "#fff7ed",
+    borderRadius: 10,
+    padding: 12,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: "#fcd34d",
+  },
+  addressLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#92400e",
+    marginBottom: 6,
+  },
+  addressText: {
+    fontSize: 15,
+    color: "#374151",
+    lineHeight: 20,
+  },
+  rateBtn: {
+    backgroundColor: "#f59e0b",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginTop: 8,
+    alignSelf: "flex-start",
+  },
+  rateBtnText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  commentsContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  commentsTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 12,
+    color: "#111827",
+  },
+  commentCard: {
+    backgroundColor: "#f9fafb",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: "#f59e0b",
+  },
+  commentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  commentProductName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+    flex: 1,
+  },
+  commentDate: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  commentRating: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  star: {
+    fontSize: 16,
+    marginRight: 2,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginLeft: 8,
+  },
+  commentText: {
+    fontSize: 14,
+    color: "#374151",
+    lineHeight: 18,
+  },
 });

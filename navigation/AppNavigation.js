@@ -10,6 +10,7 @@ import SignUpScreen from "../pages/LoginScreen/SignUpScreen";
 import ProfileScreen from "../pages/ProfileScreen/ProfileScreen";
 import CartScreen from "../pages/ShopScreen/Cart";
 import CheckoutScreen from "../pages/ShopScreen/Checkout";
+import ProductDetailScreen from "../pages/ShopScreen/ProductDetailScreen";
 import ShopScreen from "../pages/ShopScreen/ShopScreen";
 
 // Custom TabBar
@@ -22,6 +23,7 @@ import UserManagementScreen from "../pages/AdminScreen/UserManagementScreen";
 import ChatwithAIScreen from "../pages/ChatwithAI/ChatwitAIScreen";
 import FlashcardNative from "../pages/FlashCard/FlashCard";
 import LetterScreen from "../pages/Letter/LetterScreen";
+import ChangePasswordScreen from "../pages/ProfileScreen/ChangePasswordScreen";
 import PaymentCancel from "../pages/ShopScreen/PaymentCancel";
 import PaymentSuccess from "../pages/ShopScreen/PaymentSuccess";
 import TrackOrdersScreen from "../pages/ShopScreen/TrackOrder";
@@ -60,9 +62,20 @@ export default function AppNavigation() {
         <Stack.Screen name="Admin" component={AdminScreen} />
         <Stack.Screen name="Cart" component={CartScreen} />
         <Stack.Screen name="Checkout" component={CheckoutScreen} />
+        <Stack.Screen
+          name="ProductDetail"
+          component={ProductDetailScreen}
+          options={{ title: "Chi tiết sản phẩm" }}
+        />
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
         <Stack.Screen name="PaymentCancel" component={PaymentCancel} />
         <Stack.Screen name="TrackOrder" component={TrackOrdersScreen} />
+        <Stack.Screen
+          name="ChangePassword"
+          component={ChangePasswordScreen}
+          options={{ title: "Đổi mật khẩu" }}
+        />
+
         <Stack.Screen
           name="CategoryManagement"
           component={CategoryManagementScreen}
