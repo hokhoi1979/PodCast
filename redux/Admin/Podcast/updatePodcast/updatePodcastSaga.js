@@ -12,26 +12,23 @@ function* updatePodcastSaga(action) {
     const { id, data, params } = action.payload;
     const token = yield call(AsyncStorage.getItem, "accessToken");
 
-    // Build query string từ params
-    const queryParams = new URLSearchParams();
-    if (params.title) queryParams.append("title", params.title);
-    if (params.description)
-      queryParams.append("description", params.description);
+    // Tạo FormData và thêm tất cả parameters vào FormData thay vì query string
+    const formData = data || new FormData();
 
-    // Category phải là array trong query string
+    // Thêm text fields vào FormData
+    if (params.title) formData.append("title", params.title);
+    if (params.description) formData.append("description", params.description);
+
+    // Category phải là array<integer> trong FormData
     if (params.category && params.category.length > 0) {
       params.category.forEach((catId) => {
-        queryParams.append("category", catId);
+        formData.append("category", catId);
       });
     }
 
-    const url = `/api/podcasts/${id}?${queryParams.toString()}`;
+    const url = `/api/podcasts/${id}`;
 
     console.log("Update URL:", url);
-
-    // LUÔN gửi FormData (rỗng nếu không có file)
-    const formData = data || new FormData();
-
     console.log("FormData parts:", formData._parts || []);
 
     const response = yield call(api.put, url, formData, {

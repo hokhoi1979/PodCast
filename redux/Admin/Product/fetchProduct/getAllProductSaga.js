@@ -10,7 +10,7 @@ import {
 function* getAllProductSaga(action) {
   try {
     const token = yield call(AsyncStorage.getItem, "accessToken");
-    const response = yield call(api.get, `/api/products`, {
+    const response = yield call(api.get, `/api/products/active`, {
       params: {
         page: action.payload.page,
         size: action.payload.size,

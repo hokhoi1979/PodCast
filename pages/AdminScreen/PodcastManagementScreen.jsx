@@ -52,6 +52,7 @@ export default function PodcastManagementScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [oldAudioUrl, setOldAudioUrl] = useState(null); // NEW: URL audio cũ
+  const [refreshing, setRefreshing] = useState(false);
 
   // Audio preview states
   const [isPlaying, setIsPlaying] = useState(false);
@@ -86,7 +87,11 @@ export default function PodcastManagementScreen() {
   useEffect(() => {
     if (deletePodcast) {
       Toast.show({ type: "success", text1: "Xóa podcast thành công" });
+      // Trigger refresh after delete
+      setRefreshing(true);
       dispatch(fetchAllPodcast(1, 50));
+      // Reset refreshing after a short delay
+      setTimeout(() => setRefreshing(false), 1000);
     }
   }, [deletePodcast, dispatch]);
 
@@ -305,7 +310,9 @@ export default function PodcastManagementScreen() {
 
   const getCategoryNames = (categoryIds) => {
     if (!categoryIds || categoryIds.length === 0) return "";
+    console.log("Getting names for categories:", categoryIds);
     return categoryIds
+
       .map((id) => {
         const cat = categories?.find((c) => c.id === id);
         return cat?.name || id;
@@ -316,6 +323,7 @@ export default function PodcastManagementScreen() {
   const submit = () => {
     if (!title?.trim() || !description?.trim()) {
       Toast.show({ type: "error", text1: "Nhập tiêu đề và mô tả" });
+
       return;
     }
 
@@ -457,11 +465,18 @@ export default function PodcastManagementScreen() {
           keyExtractor={(it, idx) => String(it.id ?? idx)}
           renderItem={renderItem}
           contentContainerStyle={
-            podcasts?.length ? { padding: 12 } : styles.center
+            podcasts?.length
+              ? { padding: 12, paddingBottom: 100 }
+              : styles.center
           }
-          refreshing={loadingList}
-          onRefresh={() => dispatch(fetchAllPodcast(1, 50))}
+          refreshing={refreshing}
+          onRefresh={() => {
+            setRefreshing(true);
+            dispatch(fetchAllPodcast(1, 50));
+            setTimeout(() => setRefreshing(false), 1000);
+          }}
           ListEmptyComponent={<Text>Chưa có podcast</Text>}
+          showsVerticalScrollIndicator={true}
         />
       )}
 
@@ -499,7 +514,7 @@ export default function PodcastManagementScreen() {
                 <Text style={styles.closeText}>Đóng</Text>
               </Pressable>
             </View>
-            <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
               <Text style={styles.label}>Tiêu đề *</Text>
               <TextInput
                 style={styles.input}

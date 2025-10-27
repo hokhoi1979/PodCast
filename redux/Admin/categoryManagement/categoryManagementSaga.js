@@ -18,11 +18,12 @@ import {
   updateCategorySuccess,
 } from "./categoryManagementSlice";
 
-function* fetchAllCategorySaga() {
+function* fetchAllCategorySaga(action) {
   try {
     const token = yield call(AsyncStorage.getItem, "accessToken");
     const response = yield call(api.get, "/api/categories", {
       headers: { Authorization: `Bearer ${token}` },
+      params: action.payload || {}, // Pass any params from action
     });
     console.log("Fetch all categories response:", response.data);
     yield put(fetchAllCategorySuccess(response.data));

@@ -113,9 +113,9 @@ export default function LetterScreen() {
         >
           <View style={styles.headerSection}>
             <Ionicons name="mail" size={48} color="#946f4a" />
-            <Text style={styles.title}>Gửi Thư Lên Lịch</Text>
+            <Text style={styles.title}>Future Letter</Text>
             <Text style={styles.subtitle}>
-              Lên lịch gửi email cho người thân và bạn bè
+              Lên lịch gửi thư cho chính bạn trong tương lai
             </Text>
           </View>
 

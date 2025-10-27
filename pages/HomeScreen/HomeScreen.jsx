@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
+import { useFocusEffect } from "@react-navigation/native";
 import { Audio } from "expo-av";
 import { Image } from "expo-image";
 import { Heart, MessageCircle, Pause, Play } from "lucide-react-native";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -47,9 +48,10 @@ export default function HomeScreen() {
   const [favorites, setFavorites] = useState([]);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isSeeking, setIsSeeking] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [searchDebounce, setSearchDebounce] = useState("");
   const scrollRef = useRef(null);
+  const isSeekingRef = useRef(false);
 
   // Comment Modal States
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -59,7 +61,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const dispatch = useDispatch();
-  const { podcasts, loading, selectedPodcast, autoPlay } = useSelector(
+  const { podcasts, loading, selectedPodcast } = useSelector(
     (state) => state.fetchAllPodcast
   );
   const { categories, loading: categoriesLoading } = useSelector(
@@ -89,12 +91,25 @@ export default function HomeScreen() {
   const isLoadingPodcasts =
     selectedCategory === "All" ? loading : podcastsByCateLoading;
 
-  const filtered =
-    search.trim().length > 0
-      ? displayPodcasts?.filter((item) =>
-          item.title?.toLowerCase().includes(search.toLowerCase())
-        )
-      : displayPodcasts;
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchDebounce(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Memoize filtered results to prevent unnecessary re-renders
+  const filtered = useMemo(() => {
+    if (searchDebounce.trim().length > 0) {
+      return (
+        displayPodcasts?.filter((item) =>
+          item.title?.toLowerCase().includes(searchDebounce.toLowerCase())
+        ) || []
+      );
+    }
+    return displayPodcasts || [];
+  }, [displayPodcasts, searchDebounce]);
 
   // Fetch comments khi mở modal
   useEffect(() => {
@@ -134,27 +149,32 @@ export default function HomeScreen() {
     }
   }, [deleteSuccess, dispatch, selectedPodcast?.id]);
 
+  // Update currentIndex only when selectedPodcast changes, not when filtered changes
   useEffect(() => {
-    if (selectedPodcast && filtered) {
-      const index = filtered.findIndex((p) => p.id === selectedPodcast.id);
+    if (selectedPodcast && displayPodcasts) {
+      const index = displayPodcasts.findIndex(
+        (p) => p.id === selectedPodcast.id
+      );
       if (index >= 0) setCurrentIndex(index);
     }
-  }, [selectedPodcast, filtered]);
+  }, [selectedPodcast, displayPodcasts]);
 
   const playNext = useCallback(() => {
-    if (!filtered || filtered.length === 0) return;
-    const nextIndex = (currentIndex + 1) % filtered.length;
-    dispatch(selectPodcast(filtered[nextIndex], true));
+    // Use displayPodcasts instead of filtered for navigation
+    if (!displayPodcasts || displayPodcasts.length === 0) return;
+    const nextIndex = (currentIndex + 1) % displayPodcasts.length;
+    dispatch(selectPodcast(displayPodcasts[nextIndex], false)); // Không tự động phát
     setDescExpanded(false);
-  }, [filtered, currentIndex, dispatch]);
+  }, [displayPodcasts, currentIndex, dispatch]);
 
   const playPrevious = useCallback(() => {
-    if (!filtered || filtered.length === 0) return;
+    // Use displayPodcasts instead of filtered for navigation
+    if (!displayPodcasts || displayPodcasts.length === 0) return;
     const prevIndex =
-      currentIndex === 0 ? filtered.length - 1 : currentIndex - 1;
-    dispatch(selectPodcast(filtered[prevIndex], true));
+      currentIndex === 0 ? displayPodcasts.length - 1 : currentIndex - 1;
+    dispatch(selectPodcast(displayPodcasts[prevIndex], false)); // Không tự động phát
     setDescExpanded(false);
-  }, [filtered, currentIndex, dispatch]);
+  }, [displayPodcasts, currentIndex, dispatch]);
 
   useEffect(() => {
     dispatch(getFavorite());
@@ -179,78 +199,33 @@ export default function HomeScreen() {
     }
   }, [selectedCategory, dispatch]);
 
-  useEffect(() => {
-    let mounted = true;
-    const loadAndPlay = async () => {
-      try {
-        if (!selectedPodcast) {
-          if (soundRef.current) {
-            await soundRef.current.unloadAsync();
-            soundRef.current = null;
-          }
-          setIsPlaying(false);
-          setPosition(0);
-          setDuration(0);
-          return;
-        }
-
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: true,
-        });
-
+  // Dừng audio hoàn toàn khi screen mất focus (chuyển sang tab khác)
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Cleanup khi screen mất focus - tắt nhạc hoàn toàn
         if (soundRef.current) {
-          await soundRef.current.unloadAsync();
+          soundRef.current.pauseAsync().catch(() => {});
+          soundRef.current.unloadAsync().catch(() => {});
           soundRef.current = null;
         }
-
-        const uri =
-          selectedPodcast.audioUrl ||
-          selectedPodcast.audio ||
-          selectedPodcast.fileUrl ||
-          selectedPodcast.url ||
-          selectedPodcast.audioFile;
-
-        if (!uri) return;
-
-        const { sound } = await Audio.Sound.createAsync(
-          { uri },
-          { shouldPlay: autoPlay },
-          (status) => {
-            if (status.isLoaded) {
-              if (!isSeeking) {
-                setPosition(status.positionMillis || 0);
-              }
-              setDuration(status.durationMillis || 0);
-
-              if (status.didJustFinish) {
-                setIsPlaying(false);
-                setPosition(0);
-                playNext();
-              }
-            }
-          }
-        );
-
-        if (!mounted) {
-          await sound.unloadAsync();
-          return;
-        }
-
-        soundRef.current = sound;
-        await sound.setVolumeAsync(1);
-        setIsPlaying(!!autoPlay);
-      } catch (_e) {
         setIsPlaying(false);
-      }
-    };
+        setPosition(0);
+        setDuration(0);
+      };
+    }, [])
+  );
 
-    loadAndPlay();
-    return () => {
-      mounted = false;
-    };
-  }, [selectedPodcast, autoPlay, isSeeking, playNext]);
+  // Cleanup audio cũ khi selectedPodcast thay đổi
+  useEffect(() => {
+    if (soundRef.current) {
+      soundRef.current.unloadAsync().catch(() => {});
+      soundRef.current = null;
+    }
+    setIsPlaying(false);
+    setPosition(0);
+    setDuration(0);
+  }, [selectedPodcast]);
 
   useEffect(() => {
     return () => {
@@ -262,11 +237,63 @@ export default function HomeScreen() {
   }, []);
 
   const handlePlayPause = async () => {
+    if (!selectedPodcast) return;
+
+    // Nếu chưa có sound, load audio trước
+    if (!soundRef.current) {
+      try {
+        const uri =
+          selectedPodcast.audioUrl ||
+          selectedPodcast.audio ||
+          selectedPodcast.fileUrl ||
+          selectedPodcast.url ||
+          selectedPodcast.audioFile;
+
+        if (!uri) return;
+
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+        });
+
+        const { sound } = await Audio.Sound.createAsync(
+          { uri },
+          { shouldPlay: false },
+          (status) => {
+            if (status.isLoaded) {
+              if (!isSeekingRef.current) {
+                setPosition(status.positionMillis || 0);
+              }
+              setDuration(status.durationMillis || 0);
+
+              if (status.isPlaying !== isPlaying) {
+                setIsPlaying(!!status.isPlaying);
+              }
+
+              if (status.didJustFinish) {
+                setIsPlaying(false);
+                setPosition(0);
+              }
+            }
+          }
+        );
+
+        soundRef.current = sound;
+        await sound.setVolumeAsync(1);
+      } catch (_e) {
+        console.log("Error loading audio:", _e);
+        return;
+      }
+    }
+
     const sound = soundRef.current;
     if (!sound) return;
+
     try {
       const status = await sound.getStatusAsync();
       if (!status.isLoaded) return;
+
       if (isPlaying) {
         await sound.pauseAsync();
         setIsPlaying(false);
@@ -274,24 +301,35 @@ export default function HomeScreen() {
         await sound.playAsync();
         setIsPlaying(true);
       }
-    } catch (_e) {}
+    } catch (_e) {
+      console.log("Error playing/pausing:", _e);
+    }
   };
 
   const handleSeekStart = () => {
-    setIsSeeking(true);
+    isSeekingRef.current = true;
   };
 
   const handleSeekChange = (value) => {
-    setPosition(value);
+    // Convert seconds to milliseconds
+    setPosition(value * 1000);
   };
 
   const handleSeekComplete = async (value) => {
-    setIsSeeking(false);
     if (soundRef.current) {
       try {
-        await soundRef.current.setPositionAsync(value);
-      } catch (_e) {}
+        // Convert seconds to milliseconds
+        const positionInMillis = value * 1000;
+        await soundRef.current.setPositionAsync(positionInMillis);
+        setPosition(positionInMillis);
+      } catch (_e) {
+        console.log("Seek error:", _e);
+      }
     }
+    // Use setTimeout to ensure the seek operation completes before resetting
+    setTimeout(() => {
+      isSeekingRef.current = false;
+    }, 100);
   };
 
   const formatTime = (ms) => {
@@ -471,7 +509,7 @@ export default function HomeScreen() {
                 onChangeText={setSearch}
               />
             </View>
-            {search.length > 0 && (
+            {searchDebounce.length > 0 && (
               <Text style={styles.resultText}>
                 Kết quả tìm kiếm ({filtered?.length || 0})
               </Text>
@@ -523,8 +561,8 @@ export default function HomeScreen() {
                       <Slider
                         style={styles.seekSlider}
                         minimumValue={0}
-                        maximumValue={duration}
-                        value={position}
+                        maximumValue={duration / 1000}
+                        value={position / 1000}
                         onSlidingStart={handleSeekStart}
                         onValueChange={handleSeekChange}
                         onSlidingComplete={handleSeekComplete}
@@ -636,10 +674,13 @@ export default function HomeScreen() {
               filtered.map((ep) => (
                 <TouchableOpacity
                   key={ep.id}
-                  style={styles.episode}
+                  style={[
+                    styles.episode,
+                    selectedPodcast?.id === ep.id && styles.episodeActive,
+                  ]}
                   onPress={() => {
                     setDescExpanded(false);
-                    dispatch(selectPodcast(ep, true));
+                    dispatch(selectPodcast(ep, false)); // Không tự động phát khi chọn
                     scrollRef.current?.scrollTo({ y: 0, animated: true });
                   }}
                   activeOpacity={0.7}
@@ -672,7 +713,7 @@ export default function HomeScreen() {
             ) : (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>
-                  {search.trim().length > 0
+                  {searchDebounce.trim().length > 0
                     ? "Không tìm thấy podcast phù hợp"
                     : selectedCategory === "All"
                     ? "Không có podcast nào"
@@ -1024,6 +1065,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  episodeActive: {
+    backgroundColor: "#F5F5F0",
+    borderWidth: 1,
+    borderColor: "#946f4a",
+  },
   episodeImage: {
     width: 56,
     height: 56,
@@ -1124,5 +1170,14 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 16,
     fontWeight: "500",
+  },
+
+  // Search note style
+  searchNote: {
+    fontSize: 12,
+    color: "#ff6b35",
+    fontStyle: "italic",
+    marginTop: 4,
+    marginBottom: 8,
   },
 });

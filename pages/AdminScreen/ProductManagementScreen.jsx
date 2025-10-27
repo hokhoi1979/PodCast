@@ -321,7 +321,7 @@ export default function ProductManagementScreen() {
                 <Text style={styles.closeText}>Đóng</Text>
               </Pressable>
             </View>
-            <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
               <Text style={styles.label}>Tên sản phẩm</Text>
               <TextInput
                 style={styles.input}
@@ -366,7 +366,7 @@ export default function ProductManagementScreen() {
               <TouchableOpacity
                 style={[
                   styles.submitBtn,
-                  (posting || updating) && { opacity: 0.6 },
+                  (posting || updating) && styles.submitBtnDisabled,
                 ]}
                 onPress={submit}
                 disabled={posting || updating}
@@ -526,10 +526,13 @@ const styles = StyleSheet.create({
   preview: { width: 60, height: 60, borderRadius: 8, backgroundColor: "#eee" },
   submitBtn: {
     marginTop: 18,
-    backgroundColor: "#s",
+    backgroundColor: "#FF6B35",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
+  },
+  submitBtnDisabled: {
+    opacity: 0.6,
   },
   submitText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

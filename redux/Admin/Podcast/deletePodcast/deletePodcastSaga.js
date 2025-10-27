@@ -10,25 +10,26 @@ import {
 
 function* deletePodcastSaga(action) {
   try {
-    const token = yield call(AsyncStorage.getItem, "token");
-    const response = yield call(api.delete, `/podcasts/${action.payload}`, {
+    const token = yield call(AsyncStorage.getItem, "accessToken");
+    const response = yield call(api.delete, `/api/podcasts/${action.payload}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    if (response.status === 200) {
+    if (response.status === 200 || response.status === 204) {
       yield put(deletePodcastSuccess(response.data));
       Toast.show({
         type: "success",
-        text1: "Podcast deleted successfully",
+        text1: "Xóa podcast thành công",
       });
     }
   } catch (error) {
-    yield put(deletePodcastFailure(error.message));
+    const errorMessage = error.response?.data?.message || error.message;
+    yield put(deletePodcastFailure(errorMessage));
     Toast.show({
       type: "error",
-      text1: "Failed to delete podcast",
-      text2: error.message,
+      text1: "Xóa podcast thất bại",
+      text2: errorMessage,
     });
   }
 }

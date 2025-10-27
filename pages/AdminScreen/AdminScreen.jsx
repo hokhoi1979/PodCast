@@ -51,20 +51,6 @@ export default function AdminScreen({ navigation }) {
       color: "#96CEB4",
       onPress: () => navigation.navigate("ProductManagement"),
     },
-    {
-      id: 5,
-      title: "Báo cáo",
-      icon: "file-text",
-      color: "#FFEAA7",
-      onPress: () => navigation.navigate("Reports"),
-    },
-    {
-      id: 6,
-      title: "Cài đặt",
-      icon: "settings",
-      color: "#DDA0DD",
-      onPress: () => navigation.navigate("AdminSettings"),
-    },
   ];
 
   const handleLogout = () => {
@@ -130,25 +116,6 @@ export default function AdminScreen({ navigation }) {
               <Text style={styles.featureTitle}>{feature.title}</Text>
             </TouchableOpacity>
           ))}
-        </View>
-      </View>
-
-      {/* Quick Stats */}
-      <View style={styles.statsContainer}>
-        <Text style={styles.sectionTitle}>Thống kê nhanh</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>25</Text>
-            <Text style={styles.statLabel}>Danh mục</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>150</Text>
-            <Text style={styles.statLabel}>Podcast</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>1,250</Text>
-            <Text style={styles.statLabel}>Người dùng</Text>
-          </View>
         </View>
       </View>
 
