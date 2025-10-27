@@ -14,6 +14,8 @@ const api = axios.create({
 // Add token to headers
 api.interceptors.request.use(
   async (config) => {
+    console.log("UIRL", API_URL);
+
     const token = await AsyncStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

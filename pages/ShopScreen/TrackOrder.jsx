@@ -46,9 +46,9 @@ export default function TrackOrdersScreen({ route, navigation }) {
   const [selectedOrder, setSelectedOrder] = useState(0);
 
   const onRefresh = async () => {
-    setRefreshing(true); // hiện spinner
+    setRefreshing(true);
     await dispatch(getOrderUser({ userId, page: 1, size: 200 }));
-    setRefreshing(false); // tắt spinner
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -77,9 +77,6 @@ export default function TrackOrdersScreen({ route, navigation }) {
       });
     }
   }, [orderUser, dispatch]);
-
-  // Debug order data
-  useEffect(() => {}, [orderUser, orders, selected]);
 
   const orders = (orderUser?.content || orderUser || []).filter((order) =>
     [
@@ -190,7 +187,7 @@ export default function TrackOrdersScreen({ route, navigation }) {
         />
       }
     >
-      {/* 🔹 Nút quay lại trang chính */}
+      {/* Nút quay lại trang chính */}
       <View style={{ alignItems: "center", marginTop: 20, marginBottom: 40 }}>
         <TouchableOpacity
           style={{
@@ -257,7 +254,6 @@ export default function TrackOrdersScreen({ route, navigation }) {
         </View>
 
         {selected.items?.map((item) => {
-          // Lấy comments theo orderItemId từ store
           const userComments = commentsByOrderItemId[item.id] || [];
 
           return (

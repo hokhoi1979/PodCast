@@ -18,6 +18,7 @@ function* fetchProductDetailSaga(action) {
     });
     if (response.status === 200 || response.status === 201) {
       yield put(fetchProductDetailSuccess(response.data));
+      console.log("first", response.data);
     } else {
       yield put(fetchProductDetailFail(response.status));
     }
