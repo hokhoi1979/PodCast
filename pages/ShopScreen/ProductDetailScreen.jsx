@@ -54,9 +54,15 @@ export default function ProductDetailScreen({ navigation }) {
   };
 
   const calculateAverageRating = () => {
-    if (!fetchCommentProduct || fetchCommentProduct.length === 0) return 0;
+    if (
+      !fetchCommentProduct ||
+      !Array.isArray(fetchCommentProduct) ||
+      fetchCommentProduct.length === 0
+    ) {
+      return 0;
+    }
     const totalStars = fetchCommentProduct.reduce(
-      (sum, comment) => sum + comment.star,
+      (sum, comment) => sum + (comment.star || 0),
       0
     );
     return (totalStars / fetchCommentProduct.length).toFixed(1);
@@ -275,7 +281,11 @@ export default function ProductDetailScreen({ navigation }) {
               ))}
             </View>
             <Text style={styles.totalComments}>
-              ({fetchCommentProduct?.length || 0} đánh giá)
+              (
+              {Array.isArray(fetchCommentProduct)
+                ? fetchCommentProduct.length
+                : 0}{" "}
+              đánh giá)
             </Text>
           </View>
         </View>
@@ -286,7 +296,8 @@ export default function ProductDetailScreen({ navigation }) {
             <ActivityIndicator size="small" color="#f59e0b" />
             <Text style={styles.loadingText}>Đang tải đánh giá...</Text>
           </View>
-        ) : fetchCommentProduct && fetchCommentProduct.length > 0 ? (
+        ) : Array.isArray(fetchCommentProduct) &&
+          fetchCommentProduct.length > 0 ? (
           fetchCommentProduct.map((comment) => (
             <View key={comment.id} style={styles.commentCard}>
               <View style={styles.commentHeader}>

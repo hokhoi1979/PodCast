@@ -14,6 +14,7 @@ function* fetchCategorySaga(action) {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      params: action.payload || {}, // Pass any params from action
     });
     yield put(fetchAllCategorySuccess(response.data));
   } catch (error) {

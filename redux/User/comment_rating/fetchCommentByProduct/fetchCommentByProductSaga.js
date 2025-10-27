@@ -21,7 +21,9 @@ function* fetchAllCommentByProductSaga(action) {
       }
     );
     if (response.status === 200 || response.status === 201) {
-      yield put(fetchAllCommentByProductSuccess(response.data));
+      // API trả về { data: [...], message: "..." }
+      const comments = response.data?.data || response.data || [];
+      yield put(fetchAllCommentByProductSuccess(comments));
     } else {
       yield put(fetchAllCommentByProductFailure("Failed to fetch comments"));
     }

@@ -22,21 +22,21 @@ function* createCommentSaga(action) {
       yield put(createCommentSuccess(response.data));
       Toast.show({
         type: "success",
-        text1: "Comment created successfully",
+        text1: "Đánh giá thành công!",
       });
       // Không cần fetch lại comment ở đây vì RatingModal đã tự fetch
     } else {
       yield put(createCommentFailure("Failed to create comment"));
       Toast.show({
         type: "error",
-        text1: "Failed to create comment",
+        text1: "Không thể tạo đánh giá",
       });
     }
   } catch (error) {
     yield put(createCommentFailure(error.message));
     Toast.show({
       type: "error",
-      text1: "An error occurred while creating comment",
+      text1: "Có lỗi xảy ra khi tạo đánh giá",
     });
   }
 }

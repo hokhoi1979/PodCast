@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Audio } from "expo-av";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -22,7 +22,6 @@ import { getPodcastId } from "../../redux/User/fetchPodcastById/fetchPodcastById
 
 export default function FavouriteScreen() {
   const dispatch = useDispatch();
-  const navigation = useNavigation();
   const { getFavo } = useSelector((state) => state.getFavorite);
   const { getPodId } = useSelector((state) => state.fetchPodcastById);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -37,6 +36,7 @@ export default function FavouriteScreen() {
   const [shouldPlay, setShouldPlay] = useState(false);
   const soundRef = useRef(null);
   const lastUpdateRef = useRef(0);
+  const isCreatingAudioRef = useRef(false);
 
   // Dừng audio khi screen mất focus (chuyển sang tab khác)
   useFocusEffect(
@@ -58,6 +58,17 @@ export default function FavouriteScreen() {
     if (getFavo?.content) setFavourites(getFavo.content);
   }, [getFavo]);
 
+  // Cleanup khi getPodId thay đổi (chọn podcast khác)
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch(() => {});
+        soundRef.current = null;
+      }
+    };
+  }, [getPodId]);
+
+  // Cleanup khi component unmount
   useEffect(() => {
     return () => {
       if (soundRef.current) {
@@ -69,11 +80,18 @@ export default function FavouriteScreen() {
 
   const handleSelectPodcast = async (item) => {
     try {
+      // Dừng và cleanup audio cũ trước
       if (soundRef.current) {
         await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
         soundRef.current = null;
       }
+
+      // Reset trạng thái audio
+      setIsPlaying(false);
+      setPositionMillis(0);
+      setDurationMillis(0);
+
       const index = favourites.findIndex((f) => f.podcastId === item.podcastId);
       setCurrentIndex(index);
       setSelectedId(item?.podcastId);
@@ -84,11 +102,11 @@ export default function FavouriteScreen() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < favourites.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
-      handleSelectPodcast(favourites[nextIndex]);
+      await handleSelectPodcast(favourites[nextIndex]);
     } else {
       Toast.show({
         type: "info",
@@ -97,11 +115,11 @@ export default function FavouriteScreen() {
     }
   };
 
-  const handlePrev = () => {
+  const handlePrev = async () => {
     if (currentIndex > 0) {
       const prevIndex = currentIndex - 1;
       setCurrentIndex(prevIndex);
-      handleSelectPodcast(favourites[prevIndex]);
+      await handleSelectPodcast(favourites[prevIndex]);
     } else {
       Toast.show({
         type: "info",
@@ -112,13 +130,27 @@ export default function FavouriteScreen() {
 
   useEffect(() => {
     const play = async () => {
-      if (!shouldPlay || !getPodId?.audioUrl) return;
+      if (!shouldPlay || !getPodId?.audioUrl || isCreatingAudioRef.current)
+        return;
+
+      isCreatingAudioRef.current = true;
 
       try {
+        // Cleanup audio cũ trước khi tạo audio mới
         if (soundRef.current) {
-          await soundRef.current.stopAsync();
-          await soundRef.current.unloadAsync();
+          try {
+            await soundRef.current.stopAsync();
+            await soundRef.current.unloadAsync();
+          } catch (e) {
+            console.log("Cleanup error:", e);
+          }
+          soundRef.current = null;
         }
+
+        // Reset trạng thái
+        setIsPlaying(false);
+        setPositionMillis(0);
+        setDurationMillis(0);
 
         await Audio.setAudioModeAsync({
           playsInSilentModeIOS: true,
@@ -139,7 +171,10 @@ export default function FavouriteScreen() {
               setDurationMillis(status.durationMillis || 0);
               setIsPlaying(status.isPlaying || false);
 
-              if (status.didJustFinish) setIsPlaying(false);
+              if (status.didJustFinish) {
+                setIsPlaying(false);
+                setPositionMillis(0);
+              }
             }
           }
         );
@@ -155,21 +190,36 @@ export default function FavouriteScreen() {
         });
       } finally {
         setShouldPlay(false);
+        isCreatingAudioRef.current = false;
       }
     };
     play();
-  }, [shouldPlay, getPodId]);
+  }, [shouldPlay, getPodId, volume]);
 
   const handlePlayPause = async () => {
-    if (!soundRef.current) return;
-    const status = await soundRef.current.getStatusAsync();
-    if (!status.isLoaded) return;
-    if (status.isPlaying) {
-      await soundRef.current.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await soundRef.current.playAsync();
-      setIsPlaying(true);
+    if (!soundRef.current) {
+      console.log("No sound ref available");
+      return;
+    }
+
+    try {
+      const status = await soundRef.current.getStatusAsync();
+      if (!status.isLoaded) {
+        console.log("Sound not loaded");
+        return;
+      }
+
+      if (status.isPlaying) {
+        await soundRef.current.pauseAsync();
+        setIsPlaying(false);
+        console.log("Paused");
+      } else {
+        await soundRef.current.playAsync();
+        setIsPlaying(true);
+        console.log("Playing");
+      }
+    } catch (e) {
+      console.log("Play/Pause error:", e);
     }
   };
 
@@ -198,16 +248,18 @@ export default function FavouriteScreen() {
     if (soundRef.current) await soundRef.current.setIsMutedAsync(m);
   };
 
-  const handleRemove = (id) => {
+  const handleRemove = async (id) => {
     dispatch(deleteFavorite(id));
     if (selectedId === id) {
       if (soundRef.current) {
-        soundRef.current.stopAsync();
-        soundRef.current.unloadAsync();
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
         soundRef.current = null;
       }
       setSelectedId(null);
       setIsPlaying(false);
+      setPositionMillis(0);
+      setDurationMillis(0);
     }
   };
 
@@ -308,10 +360,6 @@ export default function FavouriteScreen() {
               maximumTrackTintColor="#eee"
               thumbTintColor={Platform.OS === "android" ? "#b66f3a" : undefined}
             />
-
-            <TouchableOpacity style={styles.commentBtn}>
-              <Text style={styles.commentText}>Bình luận</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
