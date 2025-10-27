@@ -19,6 +19,7 @@ import watchGetComments from "./User/comment/fetch_comment/fetchCommentSaga";
 import watchPostComment from "./User/comment/post_comment/postCommentSaga";
 import watchUpdateComment from "./User/comment/update_comment/updateCommentSaga";
 import watchCreateCommentSaga from "./User/comment_rating/create_comment/createCommentSaga";
+import watchFetchAllCommentByOrderItemIdSaga from "./User/comment_rating/fetchCommentByOrderItemId/fetchCommentByOrderItemSaga";
 import watchFetchAllCommentByProductSaga from "./User/comment_rating/fetchCommentByProduct/fetchCommentByProductSaga";
 import watchFetchAllCommentByUserSaga from "./User/comment_rating/fetchCommentByUser/fetchCommentByUserSaga";
 import watchDeleteCartItem from "./User/deleteCartItem/deleteCartItemSaga";
@@ -117,5 +118,6 @@ export default function* rootSaga() {
     watchCreateCommentSaga(),
     watchFetchAllCommentByUserSaga(),
     watchFetchAllCommentByProductSaga(),
+    watchFetchAllCommentByOrderItemIdSaga(),
   ]);
 }

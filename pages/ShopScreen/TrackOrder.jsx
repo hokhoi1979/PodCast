@@ -8,8 +8,6 @@ import {
   ShoppingCart,
   Truck,
 } from "lucide-react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -25,7 +23,7 @@ import {
 } from "react-native";
 
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAllCommentByUser } from "../../redux/User/comment_rating/fetchCommentByUser/fetchCommentByUserSlice";
+import { fetchAllCommentByOrderItemId } from "../../redux/User/comment_rating/fetchCommentByOrderItemId/fetchCommentByOrderItemIdSlice";
 import { getOrderUser } from "../../redux/User/fetchOrderByUser/getAllOrderByUserSlice";
 import { updateStatusOrder } from "../../redux/User/updateStatusOrder/updateStatusOrderSlice";
 import RatingModal from "./RatingModal";
@@ -38,7 +36,9 @@ export default function TrackOrdersScreen({ route, navigation }) {
     useState(null);
 
   const { orderUser, loading, error } = useSelector((state) => state.orderUser);
-  const { fetchCommentUser } = useSelector((state) => state.fetchCommentByUser);
+  const { commentsByOrderItemId = {} } = useSelector(
+    (state) => state.fetchCommentByOrderItemId
+  );
 
   // 🔹 Lấy userId từ route.params
   const { userId } = route.params;
@@ -46,9 +46,9 @@ export default function TrackOrdersScreen({ route, navigation }) {
   const [selectedOrder, setSelectedOrder] = useState(0);
 
   const onRefresh = async () => {
-    setRefreshing(true); // hiện spinner
+    setRefreshing(true);
     await dispatch(getOrderUser({ userId, page: 1, size: 200 }));
-    setRefreshing(false); // tắt spinner
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -56,15 +56,27 @@ export default function TrackOrdersScreen({ route, navigation }) {
       dispatch(
         getOrderUser({ userId: route.params.userId, page: 1, size: 200 })
       );
-      // Fetch comments của user
-      dispatch(fetchAllCommentByUser(route.params.userId));
     }
   }, [dispatch, route.params?.userId]);
 
-  // Debug order data
-  useEffect(() => {}, [orderUser, orders, selected]);
+  // Fetch comments cho tất cả order items khi có đơn hàng
+  useEffect(() => {
+    if (orderUser?.content && orderUser.content.length > 0) {
+      const fetchedOrderItems = new Set();
 
-  useEffect(() => {}, [fetchCommentUser]);
+      orderUser.content.forEach((order) => {
+        if (order.items) {
+          order.items.forEach((item) => {
+            const orderItemId = item.id;
+            if (orderItemId && !fetchedOrderItems.has(orderItemId)) {
+              fetchedOrderItems.add(orderItemId);
+              dispatch(fetchAllCommentByOrderItemId(orderItemId));
+            }
+          });
+        }
+      });
+    }
+  }, [orderUser, dispatch]);
 
   const orders = (orderUser?.content || orderUser || []).filter((order) =>
     [
@@ -111,8 +123,11 @@ export default function TrackOrdersScreen({ route, navigation }) {
     Alert.alert("✅ Thành công", "Đơn hàng đã được xác nhận là đã nhận hàng.");
   };
 
-  const handleRateProduct = (product) => {
-    setSelectedProductForRating(product);
+  const handleRateProduct = (item) => {
+    setSelectedProductForRating({
+      product: item.product,
+      orderItemId: item.id,
+    });
     setShowRatingModal(true);
   };
 
@@ -161,232 +176,249 @@ export default function TrackOrdersScreen({ route, navigation }) {
     );
 
   return (
-    <SafeAreaView>
-      <ScrollView
-        style={styles.container}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#f59e0b"]}
-            tintColor="#f59e0b"
-          />
-        }
-      >
-        {/* 🔹 Nút quay lại trang chính */}
-        <View style={{ alignItems: "center", marginTop: 20, marginBottom: 40 }}>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#f59e0b",
-              paddingVertical: 12,
-              paddingHorizontal: 30,
-              borderRadius: 8,
-            }}
-            onPress={() => navigation.navigate("MainApp")}
-          >
-            <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-              🏠 Về Trang Chính
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.title}>Theo dõi đơn hàng</Text>
-
-        {/* Nút refresh comment để test */}
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={["#f59e0b"]}
+          tintColor="#f59e0b"
+        />
+      }
+    >
+      {/* Nút quay lại trang chính */}
+      <View style={{ alignItems: "center", marginTop: 20, marginBottom: 40 }}>
         <TouchableOpacity
           style={{
-            backgroundColor: "#6366f1",
-            paddingVertical: 8,
-            paddingHorizontal: 16,
+            backgroundColor: "#f59e0b",
+            paddingVertical: 12,
+            paddingHorizontal: 30,
             borderRadius: 8,
-            alignSelf: "center",
-            marginBottom: 16,
           }}
-          onPress={() => {
-            dispatch(fetchAllCommentByUser(userId));
-          }}
+          onPress={() => navigation.navigate("MainApp")}
         >
-          <Text style={{ color: "#fff", fontWeight: "600" }}>
-            🔄 Refresh Comments
+          <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+            🏠 Về Trang Chính
           </Text>
         </TouchableOpacity>
+      </View>
 
-        {/* Danh sách đơn hàng */}
-        <View style={styles.orderListContainer}>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={orders}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item, index }) => (
-              <TouchableOpacity
-                onPress={() => setSelectedOrder(index)}
-                style={[
-                  styles.orderCard,
-                  selectedOrder === index && styles.orderCardActive,
-                ]}
-              >
-                <Image
-                  source={{
-                    uri:
-                      item.items?.[0]?.product?.imageUrl ||
-                      "https://placehold.co/80",
-                  }}
-                  style={styles.orderImage}
-                />
-                <Text style={styles.orderId}>#{item.id}</Text>
-                <Text style={styles.orderPrice}>
-                  {item.totalAmount?.toLocaleString("vi-VN") || 0}₫
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+      <Text style={styles.title}>Theo dõi đơn hàng</Text>
 
-        {/* Chi tiết đơn hàng */}
-        <View style={styles.detailContainer}>
-          <Text style={styles.orderTitle}>Đơn hàng #{selected.id}</Text>
-          <Text style={styles.orderDate}>
-            {selected.createdAt
-              ? new Date(selected.createdAt).toLocaleString("vi-VN")
-              : ""}
-          </Text>
-          <View style={styles.addressBox}>
-            <Text style={styles.addressLabel}>📍 Địa chỉ nhận hàng</Text>
-            <Text style={styles.addressText}>
-              {selected.address || "Không có địa chỉ"}
-            </Text>
-          </View>
-
-          {selected.items?.map((item) => {
-            return (
-              <View key={item.id} style={styles.itemCard}>
-                <Image
-                  source={{
-                    uri: item.product?.imageUrl || "https://placehold.co/100",
-                  }}
-                  style={styles.itemImage}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.itemName}>
-                    {item.product?.name || "Sản phẩm không xác định"}
-                  </Text>
-                  <Text style={styles.itemQuantity}>
-                    Số lượng: {item.quantity}
-                  </Text>
-                  <Text style={styles.itemPrice}>
-                    {item.price?.toLocaleString("vi-VN") || 0}₫
-                  </Text>
-
-                  {/* Nút đánh giá sản phẩm */}
-                  {(selected.status?.toLowerCase() === "completed" ||
-                    selected.status?.toLowerCase() === "received") && (
-                    <TouchableOpacity
-                      style={styles.rateBtn}
-                      onPress={() => handleRateProduct(item.product)}
-                    >
-                      <Text style={styles.rateBtnText}>
-                        ⭐ Đánh giá sản phẩm
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            );
-          })}
-
-          {/* Nút xác nhận */}
-          {selected.status?.toUpperCase() === "DELIVERED" && (
+      {/* Danh sách đơn hàng */}
+      <View style={styles.orderListContainer}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={orders}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item, index }) => (
             <TouchableOpacity
-              style={styles.confirmBtn}
-              onPress={() => handleConfirmReceived(selected.id)}
+              onPress={() => setSelectedOrder(index)}
+              style={[
+                styles.orderCard,
+                selectedOrder === index && styles.orderCardActive,
+              ]}
             >
-              <Text style={styles.confirmText}>Đã nhận hàng</Text>
+              <Image
+                source={{
+                  uri:
+                    item.items?.[0]?.product?.imageUrl ||
+                    "https://placehold.co/80",
+                }}
+                style={styles.orderImage}
+              />
+              <Text style={styles.orderId}>#{item.id}</Text>
+              <Text style={styles.orderPrice}>
+                {item.totalAmount?.toLocaleString("vi-VN") || 0}₫
+              </Text>
             </TouchableOpacity>
           )}
+        />
+      </View>
 
-          {/* Tổng tiền */}
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Tổng cộng:</Text>
-            <Text style={styles.totalPrice}>
-              {selected.totalAmount?.toLocaleString("vi-VN") || 0}₫
-            </Text>
-          </View>
+      {/* Chi tiết đơn hàng */}
+      <View style={styles.detailContainer}>
+        <Text style={styles.orderTitle}>Đơn hàng #{selected.id}</Text>
+        <Text style={styles.orderDate}>
+          {selected.createdAt
+            ? new Date(selected.createdAt).toLocaleString("vi-VN")
+            : ""}
+        </Text>
+        <View style={styles.addressBox}>
+          <Text style={styles.addressLabel}>📍 Địa chỉ nhận hàng</Text>
+          <Text style={styles.addressText}>
+            {selected.address || "Không có địa chỉ"}
+          </Text>
         </View>
 
-        {/* Timeline trạng thái */}
-        <View style={styles.timelineContainer}>
-          <Text style={styles.timelineTitle}>Trạng thái đơn hàng</Text>
+        {selected.items?.map((item) => {
+          const userComments = commentsByOrderItemId[item.id] || [];
 
-          {orderSteps.map((step, index) => {
-            const currentIndex = getOrderStep(selected?.status);
-            const isDone = index < currentIndex;
-            const isCurrent = index === currentIndex;
-            const Icon = step.icon;
+          return (
+            <View key={item.id} style={styles.itemCard}>
+              <Image
+                source={{
+                  uri: item.product?.imageUrl || "https://placehold.co/100",
+                }}
+                style={styles.itemImage}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemName}>
+                  {item.product?.name || "Sản phẩm không xác định"}
+                </Text>
+                <Text style={styles.itemQuantity}>
+                  Số lượng: {item.quantity}
+                </Text>
+                <Text style={styles.itemPrice}>
+                  {item.price?.toLocaleString("vi-VN") || 0}₫
+                </Text>
+
+                {/* Thông tin đánh giá */}
+                {userComments.length > 0 && (
+                  <View style={styles.commentBadge}>
+                    <Text style={styles.commentBadgeText}>
+                      💬 {userComments.length} đánh giá
+                    </Text>
+                  </View>
+                )}
+
+                {/* Nút đánh giá sản phẩm */}
+                {(selected.status?.toLowerCase() === "completed" ||
+                  selected.status?.toLowerCase() === "received") && (
+                  <TouchableOpacity
+                    style={styles.rateBtn}
+                    onPress={() => handleRateProduct(item)}
+                  >
+                    <Text style={styles.rateBtnText}>
+                      {userComments.length > 0
+                        ? "⭐ Thêm đánh giá"
+                        : "⭐ Đánh giá sản phẩm"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          );
+        })}
+
+        {/* Nút xác nhận */}
+        {selected.status?.toUpperCase() === "DELIVERED" && (
+          <TouchableOpacity
+            style={styles.confirmBtn}
+            onPress={() => handleConfirmReceived(selected.id)}
+          >
+            <Text style={styles.confirmText}>Đã nhận hàng</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Tổng tiền */}
+        <View style={styles.totalContainer}>
+          <Text style={styles.totalLabel}>Tổng cộng:</Text>
+          <Text style={styles.totalPrice}>
+            {selected.totalAmount?.toLocaleString("vi-VN") || 0}₫
+          </Text>
+        </View>
+      </View>
+
+      {/* Timeline trạng thái */}
+      <View style={styles.timelineContainer}>
+        <Text style={styles.timelineTitle}>Trạng thái đơn hàng</Text>
+
+        {orderSteps.map((step, index) => {
+          const currentIndex = getOrderStep(selected?.status);
+          const isDone = index < currentIndex;
+          const isCurrent = index === currentIndex;
+          const Icon = step.icon;
+
+          return (
+            <View
+              key={index}
+              style={[
+                styles.stepContainer,
+                isDone
+                  ? styles.stepDone
+                  : isCurrent
+                  ? styles.stepCurrent
+                  : styles.stepPending,
+              ]}
+            >
+              <Icon
+                size={22}
+                color={isDone || isCurrent ? "white" : "#a8a8a8"}
+              />
+              <Text style={styles.stepText}>{step.title}</Text>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Section đánh giá của đơn hàng */}
+      {selected.items && (
+        <View style={styles.commentsSection}>
+          <Text style={styles.commentsSectionTitle}>
+            💬 Đánh giá trong đơn hàng
+          </Text>
+
+          {selected.items.map((item) => {
+            const userComments = commentsByOrderItemId[item.id] || [];
+            if (userComments.length === 0) return null;
 
             return (
-              <View
-                key={index}
-                style={[
-                  styles.stepContainer,
-                  isDone
-                    ? styles.stepDone
-                    : isCurrent
-                    ? styles.stepCurrent
-                    : styles.stepPending,
-                ]}
-              >
-                <Icon
-                  size={22}
-                  color={isDone || isCurrent ? "white" : "#a8a8a8"}
-                />
-                <Text style={styles.stepText}>{step.title}</Text>
+              <View key={item.id} style={styles.productCommentCard}>
+                <View style={styles.productCommentHeader}>
+                  <Image
+                    source={{
+                      uri: item.product?.imageUrl || "https://placehold.co/50",
+                    }}
+                    style={styles.productCommentImage}
+                  />
+                  <Text style={styles.productCommentName}>
+                    {item.product?.name || "Sản phẩm"}
+                  </Text>
+                </View>
+
+                {userComments.map((c) => (
+                  <View key={c.id} style={styles.productCommentItem}>
+                    <View style={styles.productCommentRating}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.commentStar}>
+                          {star <= c.star ? "⭐" : "☆"}
+                        </Text>
+                      ))}
+                    </View>
+                    <Text style={styles.productCommentText}>{c.comment}</Text>
+                    <Text style={styles.productCommentDate}>
+                      {formatDate(c.dateCreated)}
+                    </Text>
+                  </View>
+                ))}
               </View>
             );
           })}
+
+          {selected.items.every(
+            (item) => !commentsByOrderItemId[item.id]?.length
+          ) && (
+            <View style={styles.noCommentsContainer}>
+              <Text style={styles.noCommentsText}>
+                Chưa có đánh giá nào cho đơn hàng này
+              </Text>
+            </View>
+          )}
         </View>
+      )}
 
-        {/* Danh sách đánh giá của user */}
-
-        {fetchCommentUser && fetchCommentUser.length > 0 && (
-          <View style={styles.commentsContainer}>
-            <Text style={styles.commentsTitle}>Đánh giá của bạn</Text>
-            {fetchCommentUser.map((comment) => (
-              <View key={comment.id} style={styles.commentCard}>
-                <View style={styles.commentHeader}>
-                  <Text style={styles.commentProductName}>
-                    {comment.product?.name || "Sản phẩm không xác định"}
-                  </Text>
-                  <Text style={styles.commentDate}>
-                    {formatDate(comment.dateCreated)}
-                  </Text>
-                </View>
-
-                <View style={styles.commentRating}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Text key={star} style={styles.star}>
-                      {star <= comment.star ? "⭐" : "☆"}
-                    </Text>
-                  ))}
-                  <Text style={styles.ratingText}>{comment.star}/5</Text>
-                </View>
-
-                <Text style={styles.commentText}>{comment.comment}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Rating Modal */}
-        <RatingModal
-          visible={showRatingModal}
-          onClose={handleCloseRatingModal}
-          productId={selectedProductForRating?.id}
-          userId={userId}
-          productName={selectedProductForRating?.name}
-        />
-      </ScrollView>
-    </SafeAreaView>
+      {/* Rating Modal */}
+      <RatingModal
+        visible={showRatingModal}
+        onClose={handleCloseRatingModal}
+        orderItemId={selectedProductForRating?.orderItemId}
+        userId={userId}
+        productName={selectedProductForRating?.product?.name}
+      />
+    </ScrollView>
   );
 }
 
@@ -506,59 +538,88 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-  commentsContainer: {
+  commentBadge: {
+    backgroundColor: "#dbeafe",
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 6,
+  },
+  commentBadgeText: {
+    fontSize: 10,
+    color: "#1e40af",
+    fontWeight: "600",
+  },
+  commentsSection: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
+    marginTop: 16,
+    marginBottom: 50,
+  },
+  commentsSectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
     marginBottom: 16,
   },
-  commentsTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
-    color: "#111827",
-  },
-  commentCard: {
+  productCommentCard: {
     backgroundColor: "#f9fafb",
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 12,
     borderLeftWidth: 3,
     borderLeftColor: "#f59e0b",
   },
-  commentHeader: {
+  productCommentHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  commentProductName: {
+  productCommentImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  productCommentName: {
     fontSize: 14,
     fontWeight: "600",
     color: "#374151",
     flex: 1,
   },
-  commentDate: {
-    fontSize: 12,
-    color: "#6b7280",
+  productCommentItem: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
   },
-  commentRating: {
+  productCommentRating: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  star: {
-    fontSize: 16,
-    marginRight: 2,
-  },
-  ratingText: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginLeft: 8,
-  },
-  commentText: {
+  commentStar: {
     fontSize: 14,
+  },
+  productCommentText: {
+    fontSize: 13,
     color: "#374151",
     lineHeight: 18,
+    marginBottom: 6,
+  },
+  productCommentDate: {
+    fontSize: 11,
+    color: "#9ca3af",
+    fontStyle: "italic",
+  },
+  noCommentsContainer: {
+    alignItems: "center",
+    padding: 20,
+  },
+  noCommentsText: {
+    fontSize: 14,
+    color: "#9ca3af",
+    fontStyle: "italic",
   },
 });
