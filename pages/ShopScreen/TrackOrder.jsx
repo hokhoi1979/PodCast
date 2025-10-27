@@ -23,7 +23,7 @@ import {
 } from "react-native";
 
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAllCommentByUser } from "../../redux/User/comment_rating/fetchCommentByUser/fetchCommentByUserSlice";
+import { fetchAllCommentByOrderItemId } from "../../redux/User/comment_rating/fetchCommentByOrderItemId/fetchCommentByOrderItemIdSlice";
 import { getOrderUser } from "../../redux/User/fetchOrderByUser/getAllOrderByUserSlice";
 import { updateStatusOrder } from "../../redux/User/updateStatusOrder/updateStatusOrderSlice";
 import RatingModal from "./RatingModal";
@@ -36,7 +36,9 @@ export default function TrackOrdersScreen({ route, navigation }) {
     useState(null);
 
   const { orderUser, loading, error } = useSelector((state) => state.orderUser);
-  const { fetchCommentUser } = useSelector((state) => state.fetchCommentByUser);
+  const { commentsByOrderItemId = {} } = useSelector(
+    (state) => state.fetchCommentByOrderItemId
+  );
 
   // 🔹 Lấy userId từ route.params
   const { userId } = route.params;
@@ -54,15 +56,30 @@ export default function TrackOrdersScreen({ route, navigation }) {
       dispatch(
         getOrderUser({ userId: route.params.userId, page: 1, size: 200 })
       );
-      // Fetch comments của user
-      dispatch(fetchAllCommentByUser(route.params.userId));
     }
   }, [dispatch, route.params?.userId]);
 
+  // Fetch comments cho tất cả order items khi có đơn hàng
+  useEffect(() => {
+    if (orderUser?.content && orderUser.content.length > 0) {
+      const fetchedOrderItems = new Set();
+
+      orderUser.content.forEach((order) => {
+        if (order.items) {
+          order.items.forEach((item) => {
+            const orderItemId = item.id;
+            if (orderItemId && !fetchedOrderItems.has(orderItemId)) {
+              fetchedOrderItems.add(orderItemId);
+              dispatch(fetchAllCommentByOrderItemId(orderItemId));
+            }
+          });
+        }
+      });
+    }
+  }, [orderUser, dispatch]);
+
   // Debug order data
   useEffect(() => {}, [orderUser, orders, selected]);
-
-  useEffect(() => {}, [fetchCommentUser]);
 
   const orders = (orderUser?.content || orderUser || []).filter((order) =>
     [
@@ -109,8 +126,11 @@ export default function TrackOrdersScreen({ route, navigation }) {
     Alert.alert("✅ Thành công", "Đơn hàng đã được xác nhận là đã nhận hàng.");
   };
 
-  const handleRateProduct = (product) => {
-    setSelectedProductForRating(product);
+  const handleRateProduct = (item) => {
+    setSelectedProductForRating({
+      product: item.product,
+      orderItemId: item.id,
+    });
     setShowRatingModal(true);
   };
 
@@ -189,25 +209,6 @@ export default function TrackOrdersScreen({ route, navigation }) {
 
       <Text style={styles.title}>Theo dõi đơn hàng</Text>
 
-      {/* Nút refresh comment để test */}
-      <TouchableOpacity
-        style={{
-          backgroundColor: "#6366f1",
-          paddingVertical: 8,
-          paddingHorizontal: 16,
-          borderRadius: 8,
-          alignSelf: "center",
-          marginBottom: 16,
-        }}
-        onPress={() => {
-          dispatch(fetchAllCommentByUser(userId));
-        }}
-      >
-        <Text style={{ color: "#fff", fontWeight: "600" }}>
-          🔄 Refresh Comments
-        </Text>
-      </TouchableOpacity>
-
       {/* Danh sách đơn hàng */}
       <View style={styles.orderListContainer}>
         <FlatList
@@ -256,6 +257,9 @@ export default function TrackOrdersScreen({ route, navigation }) {
         </View>
 
         {selected.items?.map((item) => {
+          // Lấy comments theo orderItemId từ store
+          const userComments = commentsByOrderItemId[item.id] || [];
+
           return (
             <View key={item.id} style={styles.itemCard}>
               <Image
@@ -275,14 +279,27 @@ export default function TrackOrdersScreen({ route, navigation }) {
                   {item.price?.toLocaleString("vi-VN") || 0}₫
                 </Text>
 
+                {/* Thông tin đánh giá */}
+                {userComments.length > 0 && (
+                  <View style={styles.commentBadge}>
+                    <Text style={styles.commentBadgeText}>
+                      💬 {userComments.length} đánh giá
+                    </Text>
+                  </View>
+                )}
+
                 {/* Nút đánh giá sản phẩm */}
                 {(selected.status?.toLowerCase() === "completed" ||
                   selected.status?.toLowerCase() === "received") && (
                   <TouchableOpacity
                     style={styles.rateBtn}
-                    onPress={() => handleRateProduct(item.product)}
+                    onPress={() => handleRateProduct(item)}
                   >
-                    <Text style={styles.rateBtnText}>⭐ Đánh giá sản phẩm</Text>
+                    <Text style={styles.rateBtnText}>
+                      {userComments.length > 0
+                        ? "⭐ Thêm đánh giá"
+                        : "⭐ Đánh giá sản phẩm"}
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -341,34 +358,59 @@ export default function TrackOrdersScreen({ route, navigation }) {
         })}
       </View>
 
-      {/* Danh sách đánh giá của user */}
+      {/* Section đánh giá của đơn hàng */}
+      {selected.items && (
+        <View style={styles.commentsSection}>
+          <Text style={styles.commentsSectionTitle}>
+            💬 Đánh giá trong đơn hàng
+          </Text>
 
-      {fetchCommentUser && fetchCommentUser.length > 0 && (
-        <View style={styles.commentsContainer}>
-          <Text style={styles.commentsTitle}>Đánh giá của bạn</Text>
-          {fetchCommentUser.map((comment) => (
-            <View key={comment.id} style={styles.commentCard}>
-              <View style={styles.commentHeader}>
-                <Text style={styles.commentProductName}>
-                  {comment.product?.name || "Sản phẩm không xác định"}
-                </Text>
-                <Text style={styles.commentDate}>
-                  {formatDate(comment.dateCreated)}
-                </Text>
-              </View>
+          {selected.items.map((item) => {
+            const userComments = commentsByOrderItemId[item.id] || [];
+            if (userComments.length === 0) return null;
 
-              <View style={styles.commentRating}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Text key={star} style={styles.star}>
-                    {star <= comment.star ? "⭐" : "☆"}
+            return (
+              <View key={item.id} style={styles.productCommentCard}>
+                <View style={styles.productCommentHeader}>
+                  <Image
+                    source={{
+                      uri: item.product?.imageUrl || "https://placehold.co/50",
+                    }}
+                    style={styles.productCommentImage}
+                  />
+                  <Text style={styles.productCommentName}>
+                    {item.product?.name || "Sản phẩm"}
                   </Text>
-                ))}
-                <Text style={styles.ratingText}>{comment.star}/5</Text>
-              </View>
+                </View>
 
-              <Text style={styles.commentText}>{comment.comment}</Text>
+                {userComments.map((c) => (
+                  <View key={c.id} style={styles.productCommentItem}>
+                    <View style={styles.productCommentRating}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.commentStar}>
+                          {star <= c.star ? "⭐" : "☆"}
+                        </Text>
+                      ))}
+                    </View>
+                    <Text style={styles.productCommentText}>{c.comment}</Text>
+                    <Text style={styles.productCommentDate}>
+                      {formatDate(c.dateCreated)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })}
+
+          {selected.items.every(
+            (item) => !commentsByOrderItemId[item.id]?.length
+          ) && (
+            <View style={styles.noCommentsContainer}>
+              <Text style={styles.noCommentsText}>
+                Chưa có đánh giá nào cho đơn hàng này
+              </Text>
             </View>
-          ))}
+          )}
         </View>
       )}
 
@@ -376,9 +418,9 @@ export default function TrackOrdersScreen({ route, navigation }) {
       <RatingModal
         visible={showRatingModal}
         onClose={handleCloseRatingModal}
-        productId={selectedProductForRating?.id}
+        orderItemId={selectedProductForRating?.orderItemId}
         userId={userId}
-        productName={selectedProductForRating?.name}
+        productName={selectedProductForRating?.product?.name}
       />
     </ScrollView>
   );
@@ -500,59 +542,88 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-  commentsContainer: {
+  commentBadge: {
+    backgroundColor: "#dbeafe",
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 6,
+  },
+  commentBadgeText: {
+    fontSize: 10,
+    color: "#1e40af",
+    fontWeight: "600",
+  },
+  commentsSection: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
+    marginTop: 16,
+    marginBottom: 50,
+  },
+  commentsSectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
     marginBottom: 16,
   },
-  commentsTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
-    color: "#111827",
-  },
-  commentCard: {
+  productCommentCard: {
     backgroundColor: "#f9fafb",
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 12,
     borderLeftWidth: 3,
     borderLeftColor: "#f59e0b",
   },
-  commentHeader: {
+  productCommentHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  commentProductName: {
+  productCommentImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  productCommentName: {
     fontSize: 14,
     fontWeight: "600",
     color: "#374151",
     flex: 1,
   },
-  commentDate: {
-    fontSize: 12,
-    color: "#6b7280",
+  productCommentItem: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
   },
-  commentRating: {
+  productCommentRating: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  star: {
-    fontSize: 16,
-    marginRight: 2,
-  },
-  ratingText: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginLeft: 8,
-  },
-  commentText: {
+  commentStar: {
     fontSize: 14,
+  },
+  productCommentText: {
+    fontSize: 13,
     color: "#374151",
     lineHeight: 18,
+    marginBottom: 6,
+  },
+  productCommentDate: {
+    fontSize: 11,
+    color: "#9ca3af",
+    fontStyle: "italic",
+  },
+  noCommentsContainer: {
+    alignItems: "center",
+    padding: 20,
+  },
+  noCommentsText: {
+    fontSize: 14,
+    color: "#9ca3af",
+    fontStyle: "italic",
   },
 });

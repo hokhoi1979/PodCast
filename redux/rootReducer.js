@@ -19,6 +19,7 @@ import getCommentsReducer from "./User/comment/fetch_comment/fetchCommentSlice";
 import postCommentReducer from "./User/comment/post_comment/postCommentSilce";
 import updateCommentReducer from "./User/comment/update_comment/updateCommentSlice";
 import createCommentReducer from "./User/comment_rating/create_comment/createCommentSlice";
+import fetchAllCommentByOrderItemIdReducer from "./User/comment_rating/fetchCommentByOrderItemId/fetchCommentByOrderItemIdSlice";
 import fetchAllCommentByProductReducer from "./User/comment_rating/fetchCommentByProduct/fetchCommentByProductSlice";
 import fetchAllCommentByUserReducer from "./User/comment_rating/fetchCommentByUser/fetchCommentByUserSlice";
 import deleteCartItemReducer from "./User/deleteCartItem/deleteCartItemSlice";
@@ -113,6 +114,7 @@ const rootReducer = combineReducers({
   createComment: createCommentReducer,
   fetchCommentByUser: fetchAllCommentByUserReducer,
   fetchCommentByProduct: fetchAllCommentByProductReducer,
+  fetchCommentByOrderItemId: fetchAllCommentByOrderItemIdReducer,
 });
 
 export default rootReducer;

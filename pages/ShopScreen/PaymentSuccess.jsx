@@ -19,12 +19,12 @@ export default function PaymentSuccess({ route, navigation }) {
             style={styles.image}
           />
         </View>
-        
+
         <Text style={styles.title}>Thanh toán thành công!</Text>
         <Text style={styles.subtitle}>
           Cảm ơn bạn đã tin tưởng và mua hàng tại cửa hàng của chúng tôi
         </Text>
-        
+
         <View style={styles.orderInfo}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Mã đơn hàng:</Text>
@@ -41,7 +41,7 @@ export default function PaymentSuccess({ route, navigation }) {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.navigate("MainApp")}
         >
           <Text style={styles.primaryText}>Về trang chủ</Text>
         </TouchableOpacity>

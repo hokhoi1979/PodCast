@@ -12,12 +12,12 @@ import {
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
 import { createComment } from "../../redux/User/comment_rating/create_comment/createCommentSlice";
-import { fetchAllCommentByUser } from "../../redux/User/comment_rating/fetchCommentByUser/fetchCommentByUserSlice";
+import { fetchAllCommentByOrderItemId } from "../../redux/User/comment_rating/fetchCommentByOrderItemId/fetchCommentByOrderItemIdSlice";
 
 export default function RatingModal({
   visible,
   onClose,
-  productId,
+  orderItemId,
   userId,
   productName,
 }) {
@@ -49,16 +49,21 @@ export default function RatingModal({
     }
 
     try {
-      const result = await dispatch(
+      await dispatch(
         createComment({
-          productId,
+          orderItemId,
           comment: comment.trim(),
           star: rating,
         })
       );
 
-      // Fetch lại danh sách comment của user
-      dispatch(fetchAllCommentByUser(userId));
+      // Chờ một chút để đảm bảo backend đã lưu xong
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Fetch lại comments cho orderItem này
+      if (orderItemId) {
+        await dispatch(fetchAllCommentByOrderItemId(orderItemId));
+      }
 
       Toast.show({
         type: "success",
@@ -69,7 +74,7 @@ export default function RatingModal({
       setRating(0);
       setComment("");
       onClose();
-    } catch (error) {
+    } catch (_error) {
       Toast.show({
         type: "error",
         text1: "Có lỗi xảy ra khi đánh giá",
